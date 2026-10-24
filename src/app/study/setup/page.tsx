@@ -5,7 +5,7 @@ import { StudySetup } from "./study-setup";
 
 export default async function StudySetupPage(props: PageProps<"/study/setup">) {
   const user = await requireUser();
-  const { deck: deckParam } = await props.searchParams;
+  const { deck: deckParam, mode } = await props.searchParams;
   const decks = await listDecks(user._id);
   if (!decks.length) redirect("/decks/new");
   const byId = new Map(decks.map((d) => [d._id.toHexString(), d]));
@@ -19,5 +19,5 @@ export default async function StudySetupPage(props: PageProps<"/study/setup">) {
     }))
   );
   const initial = typeof deckParam === "string" && byId.has(deckParam) ? deckParam : options[0].id;
-  return <StudySetup decks={options} initialDeckId={initial} />;
+  return <StudySetup decks={options} initialDeckId={initial} initialMode={mode === "practice" ? "practice" : "scheduled"} />;
 }

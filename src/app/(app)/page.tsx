@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Zap } from "lucide-react";
+import { CheckCircle2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DeckRow } from "@/components/deck-row";
 import { requireUser } from "@/lib/auth";
@@ -23,6 +23,8 @@ export default async function HomePage() {
     .slice(0, 3);
   const goal = Math.max(1, user.dailyGoal);
   const root = decks.find((x) => !x.parentId);
+  const newToday = Math.min(d.new, Math.max(0, goal - d.introducedToday));
+  const doneToday = !!root && d.due === 0 && newToday === 0;
   const today = new Intl.DateTimeFormat("vi-VN", { weekday: "long", day: "numeric", month: "long", timeZone: user.timezone }).format(new Date());
 
   return (
@@ -38,11 +40,28 @@ export default async function HomePage() {
         </span>
       </div>
 
+      {doneToday ? (
+        <section aria-label="Hôm nay" className="mt-6 flex flex-col items-center gap-3 rounded-card border border-border bg-card p-6 text-center">
+          <span className="grid size-14 place-items-center rounded-full bg-primary-soft text-primary">
+            <CheckCircle2 className="size-7" strokeWidth={1.75} aria-hidden />
+          </span>
+          <h2 className="text-2xl font-semibold">Hết từ cần ôn hôm nay</h2>
+          <p className="text-body">
+            {d.learning > 0 ? "Vài từ đang học sẽ quay lại sau ít phút." : "Lượt ôn tiếp theo vào ngày mai."}
+            <br />
+            Nghỉ ngơi cũng là một phần của việc nhớ lâu.
+          </p>
+          <Button asChild variant="outline" size="xl" className="mt-2 w-full">
+            <Link href={`/study/setup?deck=${root._id.toHexString()}&mode=practice`}>Luyện tập thêm</Link>
+          </Button>
+          <p className="text-[13px] leading-[18px] text-muted-foreground">Không ảnh hưởng lịch ôn</p>
+        </section>
+      ) : (
       <section aria-label="Hôm nay" className="mt-6 flex flex-col gap-5 rounded-card border border-border bg-card p-6">
         <p className="text-[13px] leading-[18px] font-medium text-muted-foreground">Hôm nay</p>
         <div className="grid grid-cols-3 gap-2 tabular-nums">
           <Stat value={d.due} label="Đến hạn" />
-          <Stat value={Math.min(d.new, Math.max(0, goal - d.introducedToday))} label="Mới" accent />
+          <Stat value={newToday} label="Mới" accent />
           <Stat value={d.learning} label="Đang học" />
         </div>
         <div className="flex flex-col gap-2">
@@ -64,6 +83,7 @@ export default async function HomePage() {
           </Button>
         )}
       </section>
+      )}
 
       {recent.length > 0 && (
         <>

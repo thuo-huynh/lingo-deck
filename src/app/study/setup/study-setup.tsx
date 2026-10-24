@@ -27,14 +27,14 @@ const MODE_HINT = {
 
 type Deck = { id: string; label: string; color: string; hasChildren: boolean; steps: StepType[] };
 
-export function StudySetup({ decks, initialDeckId }: { decks: Deck[]; initialDeckId: string }) {
+export function StudySetup({ decks, initialDeckId, initialMode }: { decks: Deck[]; initialDeckId: string; initialMode: "scheduled" | "practice" }) {
   const router = useRouter();
   const [deckId, setDeckId] = useState(initialDeckId);
   const deck = decks.find((d) => d.id === deckId)!;
   const [sub, setSub] = useState(true);
   const [limit, setLimit] = useState<number | "">("");
   const [stepCount, setStepCount] = useState<1 | 2 | 3 | null>(null);
-  const [mode, setMode] = useState<(typeof MODES)[number]["value"]>("scheduled");
+  const [mode, setMode] = useState<(typeof MODES)[number]["value"]>(initialMode);
   const [busy, setBusy] = useState(false);
   const [empty, setEmpty] = useState(false);
   const [error, setError] = useState<string | null>(null);
