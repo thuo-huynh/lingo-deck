@@ -1,0 +1,9 @@
+.devdb
+.next
+node_modules
+.env*
+!.env.example
+.next-dev.log
+test-results
+playwright-report
+e2e/.mongo-uri

@@ -223,10 +223,10 @@ banner "LingoDeck · Google sign-in setup"
 
 stage "Your app's address"
 say "Google only sends people back to addresses you list, so we need the production URL."
-note "Not deployed yet? Vercel will most likely give you https://lingo-deck.vercel.app."
+note "Current production URL: https://lingo-deck-psi.vercel.app"
 note "You can add a custom domain later by re-running this wizard."
-ask APP_URL "Production URL (e.g. https://lingo-deck.vercel.app):"
-APP_URL="${APP_URL%/}"
+ask APP_URL "Production URL (https://lingo-deck-psi.vercel.app):"
+APP_URL="${APP_URL:-https://lingo-deck-psi.vercel.app}"; APP_URL="${APP_URL%/}"
 PROD_REDIRECT="$APP_URL/api/v1/auth/google/callback"
 DEV_REDIRECT="http://localhost:3000/api/v1/auth/google/callback"
 
