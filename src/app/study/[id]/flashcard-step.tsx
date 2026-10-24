@@ -45,6 +45,8 @@ function highlight(text: string, term: string) {
 export function FlashcardStep({ current, submit, onDone, autoplay }: { current: Current; submit: Submit; onDone: () => Promise<void>; autoplay: boolean }) {
   const card = current.card as FlashCard;
   const [flipped, setFlipped] = useState(false);
+  // Rating stays available once the back has been seen, even if the learner flips to the front again.
+  const [seenBack, setSeenBack] = useState(false);
   const [busy, setBusy] = useState(false);
   const audio = useAudio(card, autoplay);
   const flipRef = useRef<HTMLButtonElement>(null);
@@ -61,12 +63,12 @@ export function FlashcardStep({ current, submit, onDone, autoplay }: { current: 
     flipRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return;
-      if (!flipped && (e.key === "Enter" || e.key === " ")) {
+      if (!seenBack && (e.key === "Enter" || e.key === " ")) {
         e.preventDefault();
-        setFlipped(true);
-      } else if (flipped && ["1", "2", "3", "4"].includes(e.key)) {
+        flip();
+      } else if (seenBack && ["1", "2", "3", "4"].includes(e.key)) {
         rate(RATINGS[Number(e.key) - 1].value);
-      } else if (flipped && e.key === " ") {
+      } else if (seenBack && e.key === " ") {
         e.preventDefault();
         audio.play();
       }
@@ -75,32 +77,40 @@ export function FlashcardStep({ current, submit, onDone, autoplay }: { current: 
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  const listen = (
-    <Button variant="secondary" size="icon-lg" className="size-12 rounded-full" aria-label="Nghe phát âm" disabled={audio.playing} onClick={() => audio.play()}>
-      <Volume2 className="size-6" strokeWidth={1.75} />
-    </Button>
-  );
+  const flip = () => {
+    setFlipped((f) => !f);
+    setSeenBack(true);
+  };
 
   return (
     <>
-      <div className="mt-6 flex min-h-0 flex-1 flex-col overflow-y-auto rounded-card border border-border bg-card p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]">
-        {!flipped ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-            {listen}
-            <div>
-              <p className="text-[40px] leading-[48px] font-semibold break-words" lang={card.languageCode}>{card.term}</p>
-              {card.phonetic && <p className="mt-1 text-body">{card.phonetic}</p>}
-            </div>
-            <p className="text-[13px] leading-[18px] text-muted-foreground">Tự nhớ nghĩa rồi lật thẻ</p>
+      <div className="relative mt-6 flex min-h-[320px] flex-1 flex-col [perspective:1200px]">
+        <div
+          role="button"
+          tabIndex={0}
+          aria-pressed={flipped}
+          aria-label={`Thẻ ghi nhớ ${card.term}, ${flipped ? "đang ở mặt sau" : "chạm để lật"}`}
+          onClick={flip}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.stopPropagation();
+              flip();
+            }
+          }}
+          data-flipped={flipped}
+          className="flip-inner min-h-0 w-full flex-1 cursor-pointer rounded-card outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+        >
+          {/* Front: the word only. The hidden face is inert so screen readers and taps only reach the visible side. */}
+          <div className="flip-face flip-front flex flex-col items-center justify-center gap-2 rounded-card border border-border bg-card p-6 text-center shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]" inert={flipped}>
+            <p className="text-[40px] leading-[48px] font-semibold break-words" lang={card.languageCode}>{card.term}</p>
+            {card.phonetic && <p className="text-body">{card.phonetic}</p>}
+            <p className="mt-4 text-[13px] leading-[18px] text-muted-foreground">Chạm vào thẻ để lật</p>
           </div>
-        ) : (
-          <div className="flex flex-col gap-5 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-2xl font-semibold break-words" lang={card.languageCode}>{card.term}</p>
-                {card.phonetic && <p className="text-body">{card.phonetic}</p>}
-              </div>
-              {listen}
+          <div className="flip-face flip-back flex flex-col gap-5 overflow-y-auto rounded-card border border-border bg-card p-6 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_8px_24px_rgba(16,24,40,0.06)]" inert={!flipped}>
+            <div className="pr-14">
+              <p className="text-2xl font-semibold break-words" lang={card.languageCode}>{card.term}</p>
+              {card.phonetic && <p className="text-body">{card.phonetic}</p>}
             </div>
             <div className="h-px bg-border" />
             <div>
@@ -123,12 +133,23 @@ export function FlashcardStep({ current, submit, onDone, autoplay }: { current: 
             ))}
             {card.notes && <p className="text-[13px] leading-[18px] whitespace-pre-line text-body">{card.notes}</p>}
           </div>
-        )}
+        </div>
+        {/* Outside the card so playing audio never flips it (and no button nests inside the card button). */}
+        <Button
+          variant="secondary"
+          size="icon-lg"
+          className="absolute top-4 right-4 z-10 size-12 rounded-full"
+          aria-label="Nghe phát âm"
+          disabled={audio.playing}
+          onClick={() => audio.play()}
+        >
+          <Volume2 className="size-6" strokeWidth={1.75} />
+        </Button>
       </div>
 
       <div className="pt-4 pb-[max(24px,env(safe-area-inset-bottom))]">
-        {!flipped ? (
-          <Button ref={flipRef} size="xl" className="w-full" onClick={() => setFlipped(true)}>
+        {!seenBack ? (
+          <Button ref={flipRef} size="xl" className="w-full" onClick={flip}>
             <RefreshCw strokeWidth={1.75} /> Lật thẻ
           </Button>
         ) : (

@@ -150,3 +150,23 @@
     @apply font-sans;
   }
 }
+
+/* Flashcard 3D flip (spec #2). Reduced motion: no rotation, the faces swap instead. */
+.flip-inner {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 400ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.flip-inner[data-flipped="true"] { transform: rotateY(180deg); }
+.flip-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flip-back { transform: rotateY(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .flip-inner, .flip-inner[data-flipped="true"], .flip-back { transform: none; }
+  .flip-inner[data-flipped="true"] .flip-front,
+  .flip-inner[data-flipped="false"] .flip-back { opacity: 0; }
+}

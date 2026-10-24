@@ -1,0 +1,33 @@
+import { expect, test } from "./fixtures";
+import type { Page } from "@playwright/test";
+
+/** Onboards a fresh user straight into a one-word, three-step session. */
+async function startTrialWord(page: Page) {
+  await page.goto("/onboarding");
+  await page.getByRole("button", { name: "Tiếp tục" }).click();
+  await page.getByRole("button", { name: "Tiếp tục" }).click();
+  await page.getByRole("button", { name: "Học thử 1 từ" }).click();
+  await expect(page.getByText("Bước 1/3 · Thẻ ghi nhớ")).toBeVisible();
+}
+
+test("tapping the flashcard flips it to the back and back again", async ({ page, signIn }) => {
+  await signIn();
+  await startTrialWord(page);
+  const card = page.getByRole("button", { name: /Thẻ ghi nhớ apple/ });
+  await expect(card).toHaveAttribute("aria-pressed", "false");
+
+  await card.click({ position: { x: 20, y: 200 } });
+  await expect(card).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("quả táo", { exact: true })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Tự đánh giá" })).toBeVisible();
+
+  await card.click({ position: { x: 20, y: 200 } });
+  await expect(card).toHaveAttribute("aria-pressed", "false");
+});
+
+test("the audio button plays sound without flipping the card", async ({ page, signIn }) => {
+  await signIn();
+  await startTrialWord(page);
+  await page.getByRole("button", { name: "Nghe phát âm" }).first().click();
+  await expect(page.getByRole("button", { name: /Thẻ ghi nhớ apple/ })).toHaveAttribute("aria-pressed", "false");
+});

@@ -44,7 +44,7 @@ test("onboarding → learn one word through all three steps → summary", async 
 
   // Step 1: flashcard. The starter deck's first word is "apple".
   await expect(page.getByText("Bước 1/3 · Thẻ ghi nhớ")).toBeVisible();
-  await expect(page.getByText("apple", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Thẻ ghi nhớ apple/ })).toBeVisible();
   await page.getByRole("button", { name: "Lật thẻ" }).click();
   await expect(page.getByText("quả táo", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Nhớ/ }).first().click();
