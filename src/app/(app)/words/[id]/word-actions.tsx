@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { AsyncButton } from "@/components/async-button";
 import { ConfirmSheet } from "@/components/bottom-sheet";
 import { api } from "@/lib/client-api";
 
@@ -31,13 +32,13 @@ export function WordActions({ id, deckId, suspended }: { id: string; deckId: str
 
   return (
     <div className="mt-4 flex flex-wrap gap-2">
-      <Button
+      <AsyncButton
         variant="outline"
         className="h-11 rounded-btn"
         onClick={() => run(() => api(`/vocabulary/${id}`, { body: { action: suspended ? "unsuspend" : "suspend" } }), suspended ? "Đã tiếp tục học từ này" : "Đã tạm dừng từ này")}
       >
         {suspended ? "Tiếp tục học" : "Tạm dừng"}
-      </Button>
+      </AsyncButton>
       <Button variant="outline" className="h-11 rounded-btn" onClick={() => ask("reset")}>Học lại từ đầu</Button>
       <Button variant="destructive" className="h-11 rounded-btn" onClick={() => ask("delete")}>Xoá từ</Button>
 

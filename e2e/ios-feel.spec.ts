@@ -58,3 +58,23 @@ test("deleting a deck goes through a confirmation sheet", async ({ page, signIn 
   await expect(page).toHaveURL(/\/decks$/);
   await expect(page.getByText("Tạm", { exact: true })).toHaveCount(0);
 });
+
+test("a button that calls the API locks with a spinner while waiting, then a banner confirms at the top", async ({ page, signIn }) => {
+  await signIn({ onboarded: true });
+  await page.route("**/api/v1/me", async (route) => {
+    await new Promise((r) => setTimeout(r, 1200));
+    await route.continue();
+  });
+  await page.goto("/settings");
+  const save = page.getByRole("button", { name: "Lưu tài khoản" });
+  await save.click();
+  await expect(save).toBeDisabled();
+  await expect(save).toHaveAttribute("aria-busy", "true");
+
+  // Sonner announces through a polite live region named "Notifications".
+  const banner = page.getByRole("region", { name: /Notifications/ }).getByText("Đã lưu", { exact: true });
+  await expect(banner).toBeVisible();
+  const box = await banner.boundingBox();
+  expect(box!.y).toBeLessThan(140);
+  await expect(save).toBeEnabled();
+});

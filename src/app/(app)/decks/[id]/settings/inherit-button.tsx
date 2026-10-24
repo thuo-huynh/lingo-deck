@@ -2,13 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { AsyncButton } from "@/components/async-button";
 import { api } from "@/lib/client-api";
 
 export function InheritButton({ deckId }: { deckId: string }) {
   const router = useRouter();
   return (
-    <Button
+    <AsyncButton
       variant="outline"
       size="xl"
       className="font-medium"
@@ -23,6 +23,6 @@ export function InheritButton({ deckId }: { deckId: string }) {
       }}
     >
       Dùng cài đặt kế thừa
-    </Button>
+    </AsyncButton>
   );
 }

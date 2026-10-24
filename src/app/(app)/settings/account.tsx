@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { AsyncButton } from "@/components/async-button";
 import { Field, inputClass } from "@/components/field";
 import { api } from "@/lib/client-api";
 
@@ -54,10 +54,10 @@ export function AccountSection(props: { email: string; dailyGoal: number; daySta
           ))}
         </select>
       </Field>
-      <Button variant="outline" size="xl" className="font-medium" onClick={save}>Lưu tài khoản</Button>
-      <Button variant="ghost" size="xl" className="font-medium text-destructive" onClick={logout}>
+      <AsyncButton variant="outline" size="xl" className="font-medium" onClick={save}>Lưu tài khoản</AsyncButton>
+      <AsyncButton variant="ghost" size="xl" className="font-medium text-destructive" onClick={logout}>
         <LogOut strokeWidth={1.75} /> Đăng xuất
-      </Button>
+      </AsyncButton>
     </section>
   );
 }
