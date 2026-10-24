@@ -47,9 +47,7 @@ export function DeckMenu({ deckId, name, moveTargets }: { deckId: string; name: 
           <SheetAction href={`/decks/new?parent=${deckId}`} icon={<FolderPlus strokeWidth={1.75} />}>Thêm bộ con</SheetAction>
           <SheetAction href={`/decks/${deckId}/settings`} icon={<SlidersHorizontal strokeWidth={1.75} />}>Cài đặt học</SheetAction>
           <SheetAction href={`/decks/${deckId}/import`} icon={<FileSpreadsheet strokeWidth={1.75} />}>Nhập CSV</SheetAction>
-          <a href={`/api/v1/decks/${deckId}/export`} download className="flex min-h-14 items-center gap-3 rounded-btn px-3 text-base font-medium active:bg-muted [&_svg]:size-5 [&_svg]:text-muted-foreground">
-            <Download strokeWidth={1.75} /> Xuất CSV
-          </a>
+          <SheetAction href={`/api/v1/decks/${deckId}/export`} download icon={<Download strokeWidth={1.75} />}>Xuất CSV</SheetAction>
           <SheetAction onClick={() => reorder("up")} icon={<ArrowUp strokeWidth={1.75} />}>Lên trên</SheetAction>
           <SheetAction onClick={() => reorder("down")} icon={<ArrowDown strokeWidth={1.75} />}>Xuống dưới</SheetAction>
           <div className="my-1 h-px bg-border" />

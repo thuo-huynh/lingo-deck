@@ -41,6 +41,12 @@ test("the + button opens a bottom sheet with three actions that Esc closes", asy
   await expect(sheet.getByRole("link")).toHaveText(["Thêm từ", "Tạo bộ từ", "Nhập CSV"]);
   await page.keyboard.press("Escape");
   await expect(sheet).toBeHidden();
+
+  // Tapping the dimmed area above the sheet closes it too.
+  await page.getByRole("button", { name: "Thêm từ, bộ từ hoặc nhập CSV" }).click();
+  await expect(sheet).toBeVisible();
+  await page.mouse.click(180, 60);
+  await expect(sheet).toBeHidden();
 });
 
 test("deleting a deck goes through a confirmation sheet", async ({ page, signIn }) => {

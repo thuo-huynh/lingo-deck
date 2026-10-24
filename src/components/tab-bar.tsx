@@ -47,12 +47,12 @@ export function TabBar() {
           type="button"
           aria-label="Thêm từ, bộ từ hoặc nhập CSV"
           onClick={() => setAdding(true)}
-          className="pointer-events-auto grid size-16 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-nav outline-none transition-transform active:scale-95 focus-visible:ring-3 focus-visible:ring-ring/40"
+          className="pointer-events-auto grid size-16 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-nav outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
         >
           <Plus className="size-[26px]" strokeWidth={2} aria-hidden />
         </button>
         <BottomSheet open={adding} onOpenChange={setAdding} title="Thêm mới">
-          <nav className="flex flex-col pb-2" onClick={() => setAdding(false)}>
+          <div className="flex flex-col pb-2" onClick={() => setAdding(false)}>
             <SheetAction href={deckId ? `/words/new?deck=${deckId}` : "/words/new"} icon={<FilePlus2 strokeWidth={1.75} />}>
               Thêm từ
             </SheetAction>
@@ -63,7 +63,7 @@ export function TabBar() {
             <SheetAction href={deckId ? `/decks/${deckId}/import` : "/decks"} icon={<FileSpreadsheet strokeWidth={1.75} />}>
               Nhập CSV
             </SheetAction>
-          </nav>
+          </div>
         </BottomSheet>
       </div>
     </div>

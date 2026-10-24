@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Loader2 } from "lucide-react";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { AsyncButton } from "@/components/async-button";
 import { cn } from "@/lib/utils";
 
 /** iOS-style sheet from the bottom: spring motion, drag down to close, grab handle (spec #2). */
@@ -29,6 +28,8 @@ export function BottomSheet({
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent
+        // No description element when there is none, rather than one that repeats the title.
+        {...(description ? {} : { "aria-describedby": undefined })}
         className={cn(
           "mx-auto max-w-md rounded-t-[20px] border-border bg-card px-4 pb-[max(16px,env(safe-area-inset-bottom))] data-[vaul-drawer-direction=bottom]:max-h-[92dvh]",
           className
@@ -38,7 +39,6 @@ export function BottomSheet({
           <DrawerTitle className="text-lg font-semibold">{title}</DrawerTitle>
           {description && <DrawerDescription className="mt-1 text-[15px] leading-6 text-body">{description}</DrawerDescription>}
         </div>
-        {hideTitle && description === undefined && <DrawerDescription className="sr-only">{title}</DrawerDescription>}
         {children}
       </DrawerContent>
     </Drawer>
@@ -55,14 +55,25 @@ export function SheetAction({
   icon,
   children,
   destructive,
+  download,
 }: {
   href?: string;
   onClick?: () => void;
   icon: React.ReactNode;
   children: React.ReactNode;
   destructive?: boolean;
+  /** Plain download link (API file), not a client-side navigation. */
+  download?: boolean;
 }) {
   const cls = cn(rowClass, destructive && "text-destructive [&_svg]:text-destructive");
+  if (href && download) {
+    return (
+      <a href={href} download className={cls}>
+        {icon}
+        {children}
+      </a>
+    );
+  }
   return href ? (
     <Link href={href} className={cls}>
       {icon}
@@ -76,13 +87,14 @@ export function SheetAction({
   );
 }
 
-/** Confirmation as a bottom sheet; the confirm button shows a spinner and locks while the action runs. */
+/** Confirmation as a bottom sheet; the confirm button locks with a spinner while the action runs. */
 export function ConfirmSheet({
   open,
   onOpenChange,
   title,
   description,
   confirmLabel,
+  cancelLabel = "Huỷ",
   destructive,
   onConfirm,
   children,
@@ -92,35 +104,28 @@ export function ConfirmSheet({
   title: string;
   description: string;
   confirmLabel: string;
+  cancelLabel?: string;
   destructive?: boolean;
   onConfirm: () => Promise<unknown> | void;
   children?: React.ReactNode;
 }) {
-  const [busy, setBusy] = useState(false);
   return (
-    <BottomSheet open={open} onOpenChange={(o) => !busy && onOpenChange(o)} title={title} description={description}>
+    <BottomSheet open={open} onOpenChange={onOpenChange} title={title} description={description}>
       {children && <div className="px-2 pb-2">{children}</div>}
       <div className="flex flex-col gap-2 px-2 pt-2">
-        <Button
+        <AsyncButton
           size="xl"
           variant={destructive ? "destructive" : "default"}
           className={cn(destructive && "bg-destructive text-white hover:bg-destructive/90")}
-          disabled={busy}
           onClick={async () => {
-            setBusy(true);
-            try {
-              await onConfirm();
-              onOpenChange(false);
-            } finally {
-              setBusy(false);
-            }
+            await onConfirm();
+            onOpenChange(false);
           }}
         >
-          {busy && <Loader2 className="animate-spin" />}
           {confirmLabel}
-        </Button>
-        <Button size="xl" variant="ghost" className="font-medium" disabled={busy} onClick={() => onOpenChange(false)}>
-          Huỷ
+        </AsyncButton>
+        <Button size="xl" variant="ghost" className="font-medium" onClick={() => onOpenChange(false)}>
+          {cancelLabel}
         </Button>
       </div>
     </BottomSheet>

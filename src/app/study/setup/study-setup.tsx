@@ -45,7 +45,8 @@ export function StudySetup({ decks, initialDeckId, initialMode, tags }: { decks:
   // Let the sheet slide away before leaving the page.
   const close = () => {
     setOpen(false);
-    setTimeout(() => router.push("/"), 250);
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setTimeout(() => router.push("/"), reduce ? 0 : 250); // length of the sheet close animation
   };
   const [deckId, setDeckId] = useState(initialDeckId);
   const deck = decks.find((d) => d.id === deckId)!;

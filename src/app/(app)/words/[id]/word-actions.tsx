@@ -9,6 +9,21 @@ import { ConfirmSheet } from "@/components/bottom-sheet";
 import { api } from "@/lib/client-api";
 
 
+const CONFIRM = {
+  reset: {
+    title: "Học lại từ đầu?",
+    description: "Từ sẽ trở về trạng thái mới và được xếp lịch lại. Lịch sử ôn cũ vẫn được giữ.",
+    confirmLabel: "Học lại",
+    destructive: false,
+  },
+  delete: {
+    title: "Xoá từ này?",
+    description: "Từ sẽ không còn xuất hiện khi học. Lịch sử ôn vẫn được giữ.",
+    confirmLabel: "Xoá",
+    destructive: true,
+  },
+};
+
 export function WordActions({ id, deckId, suspended }: { id: string; deckId: string; suspended: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -45,14 +60,7 @@ export function WordActions({ id, deckId, suspended }: { id: string; deckId: str
       <ConfirmSheet
         open={open}
         onOpenChange={setOpen}
-        title={kind === "reset" ? "Học lại từ đầu?" : "Xoá từ này?"}
-        description={
-          kind === "reset"
-            ? "Từ sẽ trở về trạng thái mới và được xếp lịch lại. Lịch sử ôn cũ vẫn được giữ."
-            : "Từ sẽ không còn xuất hiện khi học. Lịch sử ôn vẫn được giữ."
-        }
-        confirmLabel={kind === "reset" ? "Học lại" : "Xoá"}
-        destructive={kind === "delete"}
+        {...CONFIRM[kind]}
         onConfirm={() =>
           kind === "reset"
             ? run(() => api(`/vocabulary/${id}`, { body: { action: "reset" } }), "Đã đặt lại tiến độ")

@@ -9,7 +9,7 @@ export default function AppTemplate({ children }: { children: React.ReactNode })
   const types = { "nav-forward": "nav-forward", "nav-back": "nav-back", "nav-tab": "nav-tab", default: "none" };
   return (
     <ViewTransition enter={types} exit={types} default="none">
-      <div>{children}</div>
+      <div className="motion-safe:animate-in motion-safe:fade-in motion-safe:duration-200">{children}</div>
     </ViewTransition>
   );
 }

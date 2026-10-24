@@ -67,7 +67,8 @@ export function FlashcardStep({ current, submit, onDone, autoplay }: { current: 
   useEffect(() => {
     flipRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return;
+      // The card handles its own Enter/Space; inputs keep their keys.
+      if (e.target instanceof HTMLInputElement || (e.target instanceof Element && e.target.closest("[data-flipped]"))) return;
       if (!seenBack && (e.key === "Enter" || e.key === " ")) {
         e.preventDefault();
         flip();
@@ -89,7 +90,7 @@ export function FlashcardStep({ current, submit, onDone, autoplay }: { current: 
           role="button"
           tabIndex={0}
           aria-pressed={flipped}
-          aria-label={`Thẻ ghi nhớ ${card.term}, ${flipped ? "đang ở mặt sau" : "chạm để lật"}`}
+          aria-label={`Thẻ ghi nhớ ${card.term}`}
           onClick={flip}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {

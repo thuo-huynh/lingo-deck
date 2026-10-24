@@ -108,6 +108,7 @@ export function StudyPlayer({ initial }: { initial: SessionView }) {
         title="Thoát buổi học?"
         description="Các từ đã trả lời được lưu. Bạn có thể học tiếp từ chỗ này sau."
         confirmLabel="Thoát"
+        cancelLabel="Học tiếp"
         onConfirm={() => router.push("/")}
       />
     </div>
