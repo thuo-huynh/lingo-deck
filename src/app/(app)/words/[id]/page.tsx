@@ -30,6 +30,7 @@ export default async function EditWordPage(props: PageProps<"/words/[id]">) {
           tags: w.tags,
           notes: w.notes,
           audioKey: w.audioKey,
+          imageKey: w.imageKey,
         }}
       />
       <section className="mt-8 rounded-card border border-border bg-card p-5" aria-label="Tiến độ">

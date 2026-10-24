@@ -23,6 +23,7 @@ export type WordValues = {
   tags: string[];
   notes?: string;
   audioKey?: string;
+  imageKey?: string;
 };
 
 export function WordForm({
@@ -36,17 +37,18 @@ export function WordForm({
 }) {
   const router = useRouter();
   const [v, setV] = useState<WordValues>(initial);
-  const hasDetails = !!(initial.phonetic || initial.examples.length || initial.hints.length || initial.tags.length || initial.audioKey || initial.notes);
+  const hasDetails = !!(initial.phonetic || initial.examples.length || initial.hints.length || initial.tags.length || initial.audioKey || initial.imageKey || initial.notes);
   const [expanded, setExpanded] = useState(hasDetails);
   const [tag, setTag] = useState("");
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const example = v.examples[0] ?? { text: "", translationVi: "" };
-  const hint = v.hints.find((h) => h.type === "custom")?.value ?? "";
+  // Always show one empty row so adding the first example/hint needs no extra tap.
+  const examples = v.examples.length ? v.examples : [{ text: "", translationVi: "" }];
+  const hints = v.hints.length ? v.hints : [{ type: "custom" as const, value: "" }];
   const deck = decks.find((d) => d.id === v.deckId);
 
-  async function upload(file: File) {
+  async function upload(file: File, field: "audioKey" | "imageKey") {
     setUploading(true);
     try {
       const { key, uploadUrl } = await api<{ key: string; uploadUrl: string }>("/media/upload-url", {
@@ -54,8 +56,8 @@ export function WordForm({
       });
       const res = await fetch(uploadUrl, { method: "PUT", body: file, headers: { "Content-Type": file.type } });
       if (!res.ok) throw new Error("Tải lên thất bại");
-      setV((x) => ({ ...x, audioKey: key }));
-      toast.success("Đã tải âm thanh lên");
+      setV((x) => ({ ...x, [field]: key }));
+      toast.success(field === "audioKey" ? "Đã tải âm thanh lên" : "Đã tải ảnh lên");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Tải lên thất bại");
     } finally {
@@ -143,14 +145,46 @@ export function WordForm({
               <input maxLength={40} className={inputClass} placeholder="noun" value={v.partOfSpeech ?? ""} onChange={(e) => setV({ ...v, partOfSpeech: e.target.value })} />
             </Field>
           </div>
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[13px] leading-[18px] font-medium text-body">Câu ví dụ</span>
-            <input aria-label="Câu ví dụ" maxLength={500} className={inputClass} placeholder="I eat an apple every morning." value={example.text} onChange={(e) => setV({ ...v, examples: [{ ...example, text: e.target.value }] })} />
-            <input aria-label="Bản dịch câu ví dụ" maxLength={500} className={inputClass} placeholder="Bản dịch: Tôi ăn một quả táo mỗi sáng." value={example.translationVi ?? ""} onChange={(e) => setV({ ...v, examples: [{ ...example, translationVi: e.target.value }] })} />
-          </div>
-          <Field label="Gợi ý">
-            <input maxLength={300} className={inputClass} placeholder="Một loại trái cây màu đỏ hoặc xanh" value={hint} onChange={(e) => setV({ ...v, hints: e.target.value ? [{ type: "custom", value: e.target.value }] : [] })} />
-          </Field>
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1.5 text-[13px] leading-[18px] font-medium text-body">Câu ví dụ</legend>
+            {examples.map((ex, i) => {
+              const setEx = (patch: Partial<typeof ex>) => setV({ ...v, examples: examples.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
+              return (
+                <div key={i} className="flex flex-col gap-1.5 rounded-btn border border-border p-2">
+                  <input aria-label={`Câu ví dụ ${i + 1}`} maxLength={500} className={inputClass} placeholder="I eat an apple every morning." value={ex.text} onChange={(e) => setEx({ text: e.target.value })} />
+                  <input aria-label={`Bản dịch câu ví dụ ${i + 1}`} maxLength={500} className={inputClass} placeholder="Bản dịch: Tôi ăn một quả táo mỗi sáng." value={ex.translationVi ?? ""} onChange={(e) => setEx({ translationVi: e.target.value })} />
+                  {examples.length > 1 && (
+                    <Button type="button" variant="ghost" className="h-10 self-end text-[13px] text-muted-foreground" onClick={() => setV({ ...v, examples: examples.filter((_, j) => j !== i) })}>
+                      Bỏ ví dụ này
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+            {examples.length < 10 && (
+              <Button type="button" variant="ghost" className="h-11 self-start text-[13px] font-semibold text-primary" onClick={() => setV({ ...v, examples: [...examples, { text: "", translationVi: "" }] })}>
+                + Thêm ví dụ
+              </Button>
+            )}
+          </fieldset>
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1.5 text-[13px] leading-[18px] font-medium text-body">Gợi ý (hiện lần lượt khi người học xin gợi ý)</legend>
+            {hints.map((h, i) => (
+              <div key={i} className="flex gap-2">
+                <input aria-label={`Gợi ý ${i + 1}`} maxLength={300} className={inputClass} placeholder="Một loại trái cây màu đỏ hoặc xanh" value={h.value} onChange={(e) => setV({ ...v, hints: hints.map((x, j) => (j === i ? { type: "custom", value: e.target.value } : x)) })} />
+                {hints.length > 1 && (
+                  <Button type="button" variant="ghost" size="icon-lg" className="size-[52px] shrink-0" aria-label={`Bỏ gợi ý ${i + 1}`} onClick={() => setV({ ...v, hints: hints.filter((_, j) => j !== i) })}>
+                    <X />
+                  </Button>
+                )}
+              </div>
+            ))}
+            {hints.length < 10 && (
+              <Button type="button" variant="ghost" className="h-11 self-start text-[13px] font-semibold text-primary" onClick={() => setV({ ...v, hints: [...hints, { type: "custom", value: "" }] })}>
+                + Thêm gợi ý
+              </Button>
+            )}
+          </fieldset>
           <Field label="Cách viết khác được chấp nhận" hint="Phân tách bằng dấu phẩy, ví dụ: color, colour">
             <input maxLength={500} className={inputClass} value={v.acceptedAnswers.filter((a) => a !== v.term).join(", ")} onChange={(e) => setV({ ...v, acceptedAnswers: e.target.value.split(",").map((s) => s.trim()) })} />
           </Field>
@@ -161,7 +195,7 @@ export function WordForm({
                 <label>
                   {uploading ? <Loader2 className="animate-spin" /> : <Upload strokeWidth={1.75} />}
                   {v.audioKey ? "Đổi file" : "Tải file lên"}
-                  <input type="file" accept="audio/mpeg,audio/mp4,audio/aac,audio/wav,audio/webm" className="sr-only" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+                  <input type="file" accept="audio/mpeg,audio/mp4,audio/aac,audio/wav,audio/webm" className="sr-only" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0], "audioKey")} />
                 </label>
               </Button>
               {v.audioKey ? (
@@ -173,6 +207,22 @@ export function WordForm({
               )}
             </div>
             <span className="text-[13px] leading-[18px] text-muted-foreground">{v.audioKey ? "Dùng file đã tải lên" : "Mặc định: giọng đọc của thiết bị"}</span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[13px] leading-[18px] font-medium text-body">Ảnh minh hoạ</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="button" variant="outline" className="h-11 rounded-btn" disabled={uploading} asChild>
+                <label>
+                  {uploading ? <Loader2 className="animate-spin" /> : <Upload strokeWidth={1.75} />}
+                  {v.imageKey ? "Đổi ảnh" : "Tải ảnh lên"}
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0], "imageKey")} />
+                </label>
+              </Button>
+              {v.imageKey && (
+                <Button type="button" variant="ghost" className="h-11" onClick={() => setV({ ...v, imageKey: undefined })}>Bỏ ảnh</Button>
+              )}
+            </div>
+            <span className="text-[13px] leading-[18px] text-muted-foreground">JPG, PNG hoặc WebP, tối đa 5 MB. Hiện sau khi lật thẻ.</span>
           </div>
           <div className="flex flex-col gap-1.5">
             <span className="text-[13px] leading-[18px] font-medium text-body">Tag</span>
