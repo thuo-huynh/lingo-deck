@@ -23,7 +23,21 @@ export async function deckCounts(user: Pick<UserDoc, "_id" | "timezone" | "daySt
           _id: "$deckPath",
           total: { $sum: 1 },
           new: { $sum: { $cond: [{ $eq: ["$srs.state", "NEW"] }, 1, 0] } },
-          due: { $sum: { $cond: [{ $and: [{ $ne: ["$srs.state", "NEW"] }, { $lt: ["$srs.due", day.end] }] }, 1, 0] } },
+          // Same rule as the daily queue (study/session.ts dueFilter).
+          due: {
+            $sum: {
+              $cond: [
+                {
+                  $or: [
+                    { $and: [{ $eq: ["$srs.state", "REVIEW"] }, { $lt: ["$srs.due", day.end] }] },
+                    { $and: [{ $in: ["$srs.state", ["LEARNING", "RELEARNING"]] }, { $lte: ["$srs.due", now] }] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
           learning: { $sum: { $cond: [{ $in: ["$srs.state", ["LEARNING", "RELEARNING"]] }, 1, 0] } },
         },
       },

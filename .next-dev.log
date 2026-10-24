@@ -62,3 +62,23 @@
   Turbopack has seen frequent file updates and is waiting for the filesystem to settle (0.5s elapsed so far; last modified: "\\\\?\\D:\\Coding\\2027\\lingo\\node_modules\\safe-array-concat").
 ✓ Compiled in 87ms
 ✓ Compiled in 99ms
+✓ Compiled in 85ms
+ GET /study/setup?deck=6adc4aa0941855ddadbb4b61 200 in 212ms (next.js: 117ms, proxy.ts: 6ms, application-code: 89ms)
+ GET /login 200 in 41ms (next.js: 1.4ms, application-code: 40ms)
+ GET /decks 200 in 370ms (next.js: 153ms, proxy.ts: 5ms, application-code: 211ms)
+ GET /login 200 in 34ms (next.js: 1.0ms, application-code: 33ms)
+ GET /login 200 in 52ms (next.js: 1.3ms, application-code: 51ms)
+✓ Compiled in 125ms
+✓ Compiled in 36ms
+ GET /decks 200 in 69ms (next.js: 10ms, proxy.ts: 4ms, application-code: 55ms)
+ GET /decks 200 in 71ms (next.js: 14ms, proxy.ts: 3ms, application-code: 53ms)
+ GET /login 200 in 35ms (next.js: 1.0ms, application-code: 34ms)
+✓ Compiled in 32ms
+ GET /decks 200 in 80ms (next.js: 10ms, proxy.ts: 5ms, application-code: 66ms)
+ GET /login 200 in 33ms (next.js: 1.0ms, application-code: 32ms)
+✓ Compiled in 56ms
+ GET /decks 200 in 66ms (next.js: 12ms, proxy.ts: 4ms, application-code: 51ms)
+ GET /login 200 in 31ms (next.js: 1.4ms, application-code: 30ms)
+✓ Compiled in 51ms
+ GET /decks 200 in 84ms (next.js: 26ms, proxy.ts: 4ms, application-code: 55ms)
+ GET /login 200 in 28ms (next.js: 0.7ms, application-code: 27ms)

@@ -38,6 +38,7 @@ async function ensureIndexes(db: Db) {
     db.collection("users").createIndex({ email: 1 }, { unique: true }),
     db.collection("otps").createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
     db.collection("otps").createIndex({ email: 1 }),
+    db.collection("otps").createIndex({ ip: 1 }),
     db.collection("decks").createIndex({ ownerId: 1, path: 1 }),
     db.collection("vocab").createIndex({ ownerId: 1, deckPath: 1, "srs.due": 1 }),
     db.collection("vocab").createIndex({ ownerId: 1, deckId: 1, createdAt: -1 }),

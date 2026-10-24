@@ -9,6 +9,7 @@ import type { UserDoc } from "@/lib/types";
 const CODE_TTL_MS = 10 * 60_000;
 const MAX_TRIES = 5;
 const MAX_CODES_PER_WINDOW = 5;
+const MAX_CODES_PER_IP = 10;
 
 export const emailSchema = z.string().trim().toLowerCase().email("Email không hợp lệ").max(254);
 
@@ -16,13 +17,19 @@ function hash(email: string, code: string) {
   return createHmac("sha256", process.env.SESSION_PASSWORD ?? "dev").update(`${email}:${code}`).digest("hex");
 }
 
-export async function requestOtp(rawEmail: string, now = new Date()) {
+/** `ip` limits one sender spraying codes to many addresses (email bombing). */
+export async function requestOtp(rawEmail: string, ip: string, now = new Date()) {
   const email = emailSchema.parse(rawEmail);
   const { otps } = await collections();
-  const recent = await otps.countDocuments({ email, expiresAt: { $gt: now } });
-  if (recent >= MAX_CODES_PER_WINDOW) throw new AppError(429, "Bạn đã yêu cầu quá nhiều mã. Thử lại sau ít phút.");
+  const [byEmail, byIp] = await Promise.all([
+    otps.countDocuments({ email, expiresAt: { $gt: now } }),
+    otps.countDocuments({ ip, expiresAt: { $gt: now } }),
+  ]);
+  if (byEmail >= MAX_CODES_PER_WINDOW || byIp >= MAX_CODES_PER_IP) {
+    throw new AppError(429, "Bạn đã yêu cầu quá nhiều mã. Thử lại sau ít phút.");
+  }
   const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
-  await otps.insertOne({ _id: new ObjectId(), email, codeHash: hash(email, code), expiresAt: new Date(now.getTime() + CODE_TTL_MS), tries: 0 });
+  await otps.insertOne({ _id: new ObjectId(), email, ip, codeHash: hash(email, code), expiresAt: new Date(now.getTime() + CODE_TTL_MS), tries: 0 });
   await sendCode(email, code);
   return { email };
 }

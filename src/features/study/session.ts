@@ -55,7 +55,7 @@ export async function createSession(user: Learner, raw: z.input<typeof createSes
     ]);
     const [due, fresh] = await Promise.all([
       vocab
-        .find({ ...scope, "srs.state": { $ne: "NEW" }, "srs.due": { $lt: day.end } })
+        .find({ ...scope, ...dueFilter(now, day.end) })
         .sort({ "srs.due": 1 })
         .limit(Math.max(0, settings.maxReviewsPerDay - reviewsDone))
         .toArray(),
@@ -99,6 +99,19 @@ export async function createSession(user: Learner, raw: z.input<typeof createSes
   };
   if (session.items.length) await sessions.insertOne(session);
   return session;
+}
+
+/**
+ * Reviews count for the whole study day; learning steps (1m, 10m…) only once they are actually due,
+ * otherwise a word could graduate after seconds of study.
+ */
+export function dueFilter(now: Date, dayEnd: Date) {
+  return {
+    $or: [
+      { "srs.state": "REVIEW", "srs.due": { $lt: dayEnd } },
+      { "srs.state": { $in: ["LEARNING", "RELEARNING"] }, "srs.due": { $lte: now } },
+    ],
+  };
 }
 
 function order<T>(due: T[], fresh: T[], mode: DeckSettings["order"]) {
@@ -210,7 +223,9 @@ async function finalizeAttempt(
   const { vocab, sessions, reviewLogs } = await collections();
   const itemPath = `items.${itemIndex}`;
   const item = session.items[itemIndex];
-  const scheduled = session.rescheduleMode === "scheduled";
+  const learningNotDue = (word.srs.state === "LEARNING" || word.srs.state === "RELEARNING") && word.srs.due > now;
+  // An in-session retry before its learning step is due is practice; the real review comes from the queue later.
+  const scheduled = session.rescheduleMode === "scheduled" && !learningNotDue;
   const next = scheduled ? schedule(word.srs, rating, now, session.settings) : null;
   const tries = session.items.filter((i) => i.vocabId.equals(word._id)).length;
   const requeue: SessionItem | null =
@@ -223,7 +238,7 @@ async function finalizeAttempt(
     sessionId: session._id,
     attemptKey: `${session._id.toHexString()}:${itemIndex}`,
     rating,
-    rescheduleMode: session.rescheduleMode,
+    rescheduleMode: scheduled ? "scheduled" : "practice_only",
     previous: scheduled ? word.srs : null,
     next,
     reviewedAt: now,

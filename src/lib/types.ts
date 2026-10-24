@@ -14,7 +14,7 @@ export type UserDoc = {
   createdAt: Date;
 };
 
-export type OtpDoc = { _id: ObjectId; email: string; codeHash: string; expiresAt: Date; tries: number };
+export type OtpDoc = { _id: ObjectId; email: string; ip: string; codeHash: string; expiresAt: Date; tries: number };
 
 export type DeckSettings = {
   newPerDay: number;

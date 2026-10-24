@@ -142,3 +142,23 @@ describe("submitStep", () => {
     expect(sum).toMatchObject({ totalWords: 1, finishedWords: 1, forgotten: 1, remembered: 0, xp: 10 });
   });
 });
+
+describe("learning steps are respected", () => {
+  it("an in-session retry before the word is due does not touch the schedule", async () => {
+    const { w, id } = await oneWordSession({ steps: ["FLASHCARD"] });
+    await submitStep(user, id, { itemIndex: 0, step: "FLASHCARD", selfRating: "again" }, now); // due in 1m
+    await submitStep(user, id, { itemIndex: 1, step: "FLASHCARD", selfRating: "good" }, new Date(now.getTime() + 5_000));
+    const { vocab, reviewLogs } = await collections();
+    expect((await vocab.findOne({ _id: w._id }))!.srs.revision).toBe(1);
+    expect(await reviewLogs.countDocuments({ vocabId: w._id })).toBe(2);
+  });
+
+  it("does not queue a learning word before its step is due", async () => {
+    const { deck, id } = await oneWordSession({ steps: ["FLASHCARD"] });
+    await submitStep(user, id, { itemIndex: 0, step: "FLASHCARD", selfRating: "good" }, now); // due in 10m
+    const soon = await createSession(user, { deckId: deck._id.toHexString() }, new Date(now.getTime() + 60_000));
+    expect(soon.items).toHaveLength(0);
+    const later = await createSession(user, { deckId: deck._id.toHexString() }, new Date(now.getTime() + 11 * 60_000));
+    expect(later.items).toHaveLength(1);
+  });
+});
