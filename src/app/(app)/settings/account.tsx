@@ -8,13 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Field, inputClass } from "@/components/field";
 import { api } from "@/lib/client-api";
 
-export function AccountSection(props: { email: string; dailyGoal: number; dayStartHour: number; displayName: string }) {
+export function AccountSection(props: { email: string; dailyGoal: number; dayStartHour: number; displayName: string; timezone: string }) {
   const router = useRouter();
   const [v, setV] = useState(props);
 
   async function save() {
     try {
-      await api("/me", { method: "PATCH", body: { displayName: v.displayName, dailyGoal: v.dailyGoal, dayStartHour: v.dayStartHour } });
+      await api("/me", { method: "PATCH", body: { displayName: v.displayName, dailyGoal: v.dailyGoal, dayStartHour: v.dayStartHour, timezone: v.timezone } });
       toast.success("Đã lưu");
       router.refresh();
     } catch (e) {
@@ -47,6 +47,13 @@ export function AccountSection(props: { email: string; dailyGoal: number; daySta
           </select>
         </Field>
       </div>
+      <Field label="Múi giờ">
+        <select className={inputClass} value={v.timezone} onChange={(e) => setV({ ...v, timezone: e.target.value })}>
+          {Intl.supportedValuesOf("timeZone").map((tz) => (
+            <option key={tz} value={tz}>{tz}</option>
+          ))}
+        </select>
+      </Field>
       <Button variant="outline" size="xl" className="font-medium" onClick={save}>Lưu tài khoản</Button>
       <Button variant="ghost" size="xl" className="font-medium text-destructive" onClick={logout}>
         <LogOut strokeWidth={1.75} /> Đăng xuất

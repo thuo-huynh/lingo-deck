@@ -82,11 +82,47 @@ export async function updateDeck(ownerId: ObjectId, deckId: string, raw: Partial
 }
 
 /** Soft delete: archives the deck and its subdecks. Words and their review history stay in the database. */
-export async function archiveDeck(ownerId: ObjectId, deckId: string, now = new Date()) {
+export async function archiveDeck(ownerId: ObjectId, deckId: string, moveWordsTo?: string | null, now = new Date()) {
   const deck = await getOwnedDeck(ownerId, deckId);
+  const target = moveWordsTo ? await getOwnedDeck(ownerId, moveWordsTo) : null;
+  if (target?.path.some((id) => id.equals(deck._id))) throw badRequest("Không thể chuyển từ vào bộ đang xoá");
   const { decks, vocab } = await collections();
-  await decks.updateMany({ ownerId, path: deck._id }, { $set: { archivedAt: now } });
-  await vocab.updateMany({ ownerId, deckPath: deck._id, status: { $ne: "archived" } }, { $set: { status: "archived", updatedAt: now } });
+  const client = await getClient();
+  // Spec 10.2: deleting a deck either moves its words (keeping SRS history) or archives them; never hard-deletes.
+  await client.withSession((s) =>
+    s.withTransaction(async () => {
+      if (target) {
+        await vocab.updateMany(
+          { ownerId, deckPath: deck._id },
+          { $set: { deckId: target._id, deckPath: target.path, updatedAt: now } },
+          { session: s }
+        );
+      } else {
+        await vocab.updateMany(
+          { ownerId, deckPath: deck._id, status: { $ne: "archived" } },
+          { $set: { status: "archived", updatedAt: now } },
+          { session: s }
+        );
+      }
+      await decks.updateMany({ ownerId, path: deck._id }, { $set: { archivedAt: now } }, { session: s });
+    })
+  );
+}
+
+/** Swaps a deck with its previous/next sibling in the library order. */
+export async function moveDeck(ownerId: ObjectId, deckId: string, direction: "up" | "down") {
+  const deck = await getOwnedDeck(ownerId, deckId);
+  const { decks } = await collections();
+  const siblings = await decks
+    .find({ ownerId, parentId: deck.parentId, archivedAt: null })
+    .sort({ sortOrder: 1, createdAt: 1 })
+    .toArray();
+  const i = siblings.findIndex((d) => d._id.equals(deck._id));
+  const j = direction === "up" ? i - 1 : i + 1;
+  if (j < 0 || j >= siblings.length) return;
+  [siblings[i], siblings[j]] = [siblings[j], siblings[i]];
+  // Renumber the whole sibling list so older duplicate sortOrder values cannot tie.
+  await decks.bulkWrite(siblings.map((d, n) => ({ updateOne: { filter: { _id: d._id }, update: { $set: { sortOrder: n } } } })));
 }
 
 export async function getDeckSettings(ownerId: ObjectId, deck: DeckDoc): Promise<DeckSettings> {

@@ -12,7 +12,7 @@ export default async function SettingsPage() {
       <div className="mt-6">
         <SettingsForm initial={user.defaultSettings ?? DEFAULT_SETTINGS} endpoint="/me/settings" />
       </div>
-      <AccountSection email={user.email} dailyGoal={user.dailyGoal} dayStartHour={user.dayStartHour} displayName={user.displayName ?? ""} />
+      <AccountSection timezone={user.timezone} email={user.email} dailyGoal={user.dailyGoal} dayStartHour={user.dayStartHour} displayName={user.displayName ?? ""} />
     </main>
   );
 }

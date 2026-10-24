@@ -7,6 +7,17 @@ const input = z.object({
   displayName: z.string().trim().max(60).optional(),
   dailyGoal: z.number().int().min(1).max(200).optional(),
   dayStartHour: z.number().int().min(0).max(23).optional(),
+  timezone: z
+    .string()
+    .refine((tz) => {
+      try {
+        new Intl.DateTimeFormat("en-US", { timeZone: tz });
+        return true;
+      } catch {
+        return false;
+      }
+    }, "Múi giờ không hợp lệ")
+    .optional(),
   onboarded: z.boolean().optional(),
 });
 
