@@ -59,6 +59,11 @@ export function FlashcardStep({ current, submit, onDone, autoplay }: { current: 
     else setBusy(false);
   }
 
+  const flip = () => {
+    setFlipped((f) => !f);
+    setSeenBack(true);
+  };
+
   useEffect(() => {
     flipRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
@@ -76,11 +81,6 @@ export function FlashcardStep({ current, submit, onDone, autoplay }: { current: 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
-
-  const flip = () => {
-    setFlipped((f) => !f);
-    setSeenBack(true);
-  };
 
   return (
     <>
