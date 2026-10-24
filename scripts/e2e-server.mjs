@@ -11,7 +11,10 @@ writeFileSync("e2e/.mongo-uri", uri);
 const server = spawn("npx", ["next", "start", "-p", "3100"], {
   stdio: "inherit",
   shell: true,
-  env: { ...process.env, MONGODB_URI: uri, MONGODB_DB: "e2e", SESSION_PASSWORD: "e2e-session-password-at-least-32-chars!!" },
+  env: { ...process.env, MONGODB_URI: uri, MONGODB_DB: "e2e", SESSION_PASSWORD: "e2e-session-password-at-least-32-chars!!",
+    GOOGLE_CLIENT_ID: "e2e-client.apps.googleusercontent.com",
+    GOOGLE_CLIENT_SECRET: "e2e-secret",
+  },
 });
 
 const stop = async () => {

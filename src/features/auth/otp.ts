@@ -3,9 +3,8 @@ import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { collections } from "@/lib/db";
-import { isValidTimeZone } from "@/lib/day";
 import { AppError } from "@/lib/errors";
-import type { UserDoc } from "@/lib/types";
+import { findOrCreateUser } from "./users";
 
 const CODE_TTL_MS = 10 * 60_000;
 const MAX_TRIES = 5;
@@ -39,7 +38,7 @@ export async function requestOtp(rawEmail: string, ip: string, now = new Date())
 export async function verifyOtp(rawEmail: string, rawCode: string, timezone = "Asia/Ho_Chi_Minh", now = new Date()) {
   const email = emailSchema.parse(rawEmail);
   const code = z.string().trim().regex(/^\d{6}$/, "Mã gồm 6 chữ số").parse(rawCode);
-  const { otps, users } = await collections();
+  const { otps } = await collections();
   const candidates = await otps.find({ email, expiresAt: { $gt: now }, tries: { $lt: MAX_TRIES } }).toArray();
   const expected = Buffer.from(hash(email, code));
   const match = candidates.find((o) => timingSafeEqual(Buffer.from(o.codeHash), expected));
@@ -49,28 +48,13 @@ export async function verifyOtp(rawEmail: string, rawCode: string, timezone = "A
   }
   await otps.deleteMany({ email });
 
-  const user = await users.findOneAndUpdate(
-    { email },
-    {
-      $setOnInsert: {
-        _id: new ObjectId(),
-        email,
-        timezone: isValidTimeZone(timezone) ? timezone : "Asia/Ho_Chi_Minh",
-        dayStartHour: 4,
-        dailyGoal: 10,
-        onboarded: false,
-        createdAt: now,
-      } satisfies Omit<UserDoc, "displayName">,
-    },
-    { upsert: true, returnDocument: "after" }
-  );
-  return user!;
+  return findOrCreateUser(email, timezone, now);
 }
 
 async function sendCode(email: string, code: string) {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
-    if (process.env.NODE_ENV === "production") throw new Error("RESEND_API_KEY is not set");
+    if (process.env.NODE_ENV === "production") throw new AppError(400, "Đăng nhập bằng email chưa được bật. Hãy dùng Google.");
     console.info(`[dev] Mã đăng nhập cho ${email}: ${code}`);
     return;
   }

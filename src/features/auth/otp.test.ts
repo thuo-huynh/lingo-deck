@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { setupTestMongo } from "@/test/mongo";
 import { requestOtp, verifyOtp } from "./otp";
+import { findOrCreateUser } from "./users";
 
 setupTestMongo();
 
@@ -47,5 +48,11 @@ describe("email OTP", () => {
     for (let i = 0; i < 10; i++) await codeFor(`victim${i}@example.com`, "198.51.100.7");
     await expect(codeFor("victim10@example.com", "198.51.100.7")).rejects.toThrow("quá nhiều");
     await expect(codeFor("someone@example.com", "198.51.100.8")).resolves.toMatch(/^\d{6}$/);
+  });
+
+  it("a Google sign-in with the same email reaches the same account", async () => {
+    const viaOtp = await verifyOtp("same@example.com", await codeFor("same@example.com"));
+    const viaGoogle = await findOrCreateUser("Same@Example.com");
+    expect(viaGoogle._id).toEqual(viaOtp._id);
   });
 });

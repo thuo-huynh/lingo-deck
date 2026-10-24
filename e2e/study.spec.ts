@@ -3,7 +3,26 @@ import { expect, test } from "./fixtures";
 test("signed-out visitors are sent to the login page", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
-  await expect(page.getByRole("button", { name: "Gửi mã đăng nhập" })).toBeVisible();
+  // Production without a mail key: Google is the only way in.
+  await expect(page.getByRole("link", { name: "Tiếp tục với Google" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Gửi mã đăng nhập" })).toHaveCount(0);
+});
+
+test("Google sign-in starts an OAuth code flow with PKCE", async ({ request }) => {
+  const res = await request.get("/api/v1/auth/google?tz=Asia%2FHo_Chi_Minh", { maxRedirects: 0 });
+  expect(res.status()).toBe(307);
+  const to = new URL(res.headers()["location"]);
+  expect(to.host).toBe("accounts.google.com");
+  expect(to.searchParams.get("client_id")).toBe("e2e-client.apps.googleusercontent.com");
+  expect(to.searchParams.get("redirect_uri")).toBe("http://localhost:3100/api/v1/auth/google/callback");
+  expect(to.searchParams.get("code_challenge_method")).toBe("S256");
+  expect(res.headers()["set-cookie"]).toContain("ld_oauth=");
+});
+
+test("a forged Google callback is rejected back to the login page", async ({ page }) => {
+  await page.goto("/api/v1/auth/google/callback?code=fake&state=forged");
+  await expect(page).toHaveURL(/\/login\?error=google$/);
+  await expect(page.getByText("Không đăng nhập được bằng Google. Thử lại nhé.")).toBeVisible();
 });
 
 test("onboarding → learn one word through all three steps → summary", async ({ page, signIn }) => {
