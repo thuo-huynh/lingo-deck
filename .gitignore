@@ -44,3 +44,6 @@ next-env.d.ts
 /.devdb
 
 /.next-dev.log
+/e2e/.mongo-uri
+/test-results
+/playwright-report
