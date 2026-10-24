@@ -34,7 +34,8 @@ npm run lint
 |---|---|
 | `MONGODB_URI` | Atlas connection string (Atlas luôn là replica set → hỗ trợ transaction) |
 | `SESSION_PASSWORD` | 32+ ký tự, dùng để mã hoá cookie phiên và băm mã OTP |
-| `RESEND_API_KEY`, `EMAIL_FROM` | Gửi mã đăng nhập; domain gửi phải được xác minh trên Resend |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Đăng nhập Google (xem mục Đăng nhập) |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Không bắt buộc: bật đăng nhập bằng mã email; domain gửi phải được xác minh trên Resend |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | Upload âm thanh/ảnh |
 
 R2 bucket cần CORS cho phép `PUT` từ domain của app (trình duyệt upload thẳng lên R2 bằng presigned URL):
@@ -42,6 +43,18 @@ R2 bucket cần CORS cho phép `PUT` từ domain của app (trình duyệt uploa
 ```json
 [{ "AllowedOrigins": ["https://your-domain"], "AllowedMethods": ["PUT", "GET"], "AllowedHeaders": ["content-type"], "MaxAgeSeconds": 3600 }]
 ```
+
+## Đăng nhập
+
+- **Google:** cần `GOOGLE_CLIENT_ID` và `GOOGLE_CLIENT_SECRET`. Chạy wizard để tạo OAuth client và lưu vào `.env.local` và Vercel:
+
+  ```bash
+  bash scripts/setup-google-oauth.sh
+  ```
+
+- **Mã qua email (dự phòng):** chỉ hiện khi có `RESEND_API_KEY`. Ở dev, mã được in ra log.
+
+Hai cách nối vào cùng một tài khoản theo email.
 
 ## Cài lên iPhone
 
