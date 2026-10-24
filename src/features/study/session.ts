@@ -296,3 +296,13 @@ export function summarize(session: SessionDoc) {
     rescheduleMode: session.rescheduleMode,
   };
 }
+
+/** The latest unfinished session that still has words to answer (user story: resume an interrupted session). */
+export async function resumableSession(userId: ObjectId) {
+  const { sessions } = await collections();
+  const s = await sessions.findOne({ userId, status: "active", "items.status": "pending" }, { sort: { startedAt: -1 } });
+  if (!s) return null;
+  const words = new Set(s.items.map((i) => i.vocabId.toHexString()));
+  const pending = new Set(s.items.filter((i) => i.status === "pending").map((i) => i.vocabId.toHexString()));
+  return { id: s._id.toHexString(), totalWords: words.size, completedWords: words.size - pending.size };
+}

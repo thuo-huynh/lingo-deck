@@ -4,7 +4,7 @@ import { setupTestMongo } from "@/test/mongo";
 import { collections } from "@/lib/db";
 import { createDeck } from "@/features/decks/service";
 import { createVocab } from "@/features/vocab/service";
-import { createSession, finishSession, submitStep } from "./session";
+import { createSession, finishSession, resumableSession, submitStep } from "./session";
 import { updateDeckSettings } from "@/features/decks/service";
 import { DEFAULT_SETTINGS } from "@/features/decks/settings";
 
@@ -160,5 +160,22 @@ describe("learning steps are respected", () => {
     expect(soon.items).toHaveLength(0);
     const later = await createSession(user, { deckId: deck._id.toHexString() }, new Date(now.getTime() + 11 * 60_000));
     expect(later.items).toHaveLength(1);
+  });
+});
+
+describe("resumableSession", () => {
+  it("returns the latest unfinished session with words left, and nothing once it is finished", async () => {
+    const { id } = await oneWordSession({ steps: ["FLASHCARD", "MEANING_TO_WORD"] });
+    await submitStep(user, id, { itemIndex: 0, step: "FLASHCARD", selfRating: "good" }, now);
+    const r = await resumableSession(user._id);
+    expect(r).toMatchObject({ id, totalWords: 1, completedWords: 0 });
+
+    await finishSession(user._id, id, now);
+    expect(await resumableSession(user._id)).toBeNull();
+  });
+
+  it("ignores another user's sessions", async () => {
+    await oneWordSession();
+    expect(await resumableSession(new ObjectId())).toBeNull();
   });
 });

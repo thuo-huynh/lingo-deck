@@ -1,17 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { CheckCircle2, Zap } from "lucide-react";
+import { CheckCircle2, Play, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DeckRow } from "@/components/deck-row";
 import { requireUser } from "@/lib/auth";
 import { listDecks } from "@/features/decks/service";
 import { dashboard } from "@/features/stats/service";
+import { resumableSession } from "@/features/study/session";
 
 export default async function HomePage() {
   const user = await requireUser();
   if (!user.onboarded) redirect("/onboarding");
   const decks = await listDecks(user._id);
-  const d = await dashboard(user, decks);
+  const [d, resume] = await Promise.all([dashboard(user, decks), resumableSession(user._id)]);
   const byId = new Map(decks.map((x) => [x._id.toHexString(), x]));
   const pathName = (ids: typeof decks[number]["path"]) =>
     ids.slice(0, -1).map((id) => byId.get(id.toHexString())?.name).filter(Boolean).join(" › ");
@@ -39,6 +40,23 @@ export default async function HomePage() {
           {d.streak} ngày
         </span>
       </div>
+
+      {resume && (
+        <Link
+          href={`/study/${resume.id}`}
+          className="mt-6 flex min-h-16 items-center gap-3 rounded-card border border-primary/30 bg-primary-soft px-4 py-3 text-primary-soft-foreground"
+        >
+          <span className="grid size-10 place-items-center rounded-full bg-primary text-primary-foreground">
+            <Play className="size-5" strokeWidth={2} aria-hidden />
+          </span>
+          <span className="flex flex-1 flex-col">
+            <span className="font-semibold">Tiếp tục buổi học</span>
+            <span className="text-[13px] leading-[18px] tabular-nums">
+              {resume.completedWords} / {resume.totalWords} từ
+            </span>
+          </span>
+        </Link>
+      )}
 
       {doneToday ? (
         <section aria-label="Hôm nay" className="mt-6 flex flex-col items-center gap-3 rounded-card border border-border bg-card p-6 text-center">
