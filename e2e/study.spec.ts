@@ -8,6 +8,15 @@ test("signed-out visitors are sent to the login page", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Gửi mã đăng nhập" })).toHaveCount(0);
 });
 
+test("home and privacy pages are public (required by Google's OAuth review)", async ({ page }) => {
+  await page.goto("/about");
+  await expect(page.getByRole("heading", { name: "Học từ vựng mỗi ngày, nhớ lâu hơn" })).toBeVisible();
+  await page.goto("/privacy");
+  await expect(page.getByRole("heading", { name: "Chính sách quyền riêng tư" })).toBeVisible();
+  await page.goto("/login");
+  await expect(page.getByRole("link", { name: "Chính sách quyền riêng tư" })).toBeVisible();
+});
+
 test("Google sign-in starts an OAuth code flow with PKCE", async ({ request }) => {
   const res = await request.get("/api/v1/auth/google?tz=Asia%2FHo_Chi_Minh", { maxRedirects: 0 });
   expect(res.status()).toBe(307);

@@ -142,6 +142,9 @@ export function LoginForm({ emailEnabled, googleEnabled, initialError }: { email
       <p className="mt-8 text-center text-[13px] leading-[18px] text-muted-foreground">
         {emailEnabled ? "Không cần mật khẩu. Mã đăng nhập sẽ được gửi tới email của bạn." : "Không cần mật khẩu."}
       </p>
+      <p className="mt-2 text-center text-[13px] leading-[18px] text-muted-foreground">
+        <a href="/about" className="underline">Giới thiệu</a> · <a href="/privacy" className="underline">Chính sách quyền riêng tư</a>
+      </p>
     </>
   );
 }
