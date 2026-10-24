@@ -7,7 +7,6 @@ const PASSWORD = "e2e-session-password-at-least-32-chars!!";
 
 /** Seeds a user and signs the browser in with a real sealed session cookie (OTP itself is covered by integration tests). */
 export const test = base.extend<{ signIn: (opts?: { onboarded?: boolean }) => Promise<ObjectId>; db: MongoClient }>({
-  // eslint-disable-next-line no-empty-pattern
   db: async ({}, use) => {
     const client = await new MongoClient(readFileSync("e2e/.mongo-uri", "utf8")).connect();
     await use(client);
