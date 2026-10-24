@@ -207,7 +207,7 @@ export function WordForm({
       )}
 
       <p role="alert" className="min-h-[18px] text-[13px] text-destructive">{error}</p>
-      <div className="sticky bottom-[calc(84px+env(safe-area-inset-bottom))] -mx-6 flex gap-3 border-t border-border bg-background px-6 py-3">
+      <div className="sticky bottom-[calc(108px+env(safe-area-inset-bottom))] -mx-6 flex gap-3 border-t border-border bg-background px-6 py-3">
         {!wordId && (
           <Button type="button" variant="outline" size="xl" className="flex-1 font-medium" disabled={busy} onClick={(e) => save(e, true)}>
             Lưu & thêm tiếp

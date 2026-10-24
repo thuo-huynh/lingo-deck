@@ -1,6 +1,3 @@
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { DeckRow } from "@/components/deck-row";
 import { requireUser } from "@/lib/auth";
 import { listDecks } from "@/features/decks/service";
@@ -33,19 +30,14 @@ export default async function DecksPage() {
 
   return (
     <main>
-      <div className="flex items-center justify-between">
+      <div className="flex min-h-11 items-center">
         <h1 className="text-2xl font-semibold">Bộ từ</h1>
-        <Button asChild variant="outline" className="h-11 rounded-btn px-4 text-[15px]">
-          <Link href="/decks/new">
-            <Plus strokeWidth={1.75} /> Tạo bộ từ
-          </Link>
-        </Button>
       </div>
 
       {rows.length === 0 ? (
         <div className="mt-10 rounded-card border border-border bg-card p-6 text-center">
           <p className="font-medium">Chưa có bộ từ nào</p>
-          <p className="mt-1 text-[13px] text-muted-foreground">Tạo bộ từ đầu tiên rồi thêm từ vựng để bắt đầu học.</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">Bấm nút + ở góc dưới để tạo bộ từ đầu tiên.</p>
         </div>
       ) : (
         <div className="mt-6 overflow-hidden rounded-card border border-border bg-card">
