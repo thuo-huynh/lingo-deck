@@ -107,7 +107,7 @@ test("add a deck and a word from the + button", async ({ page, signIn }) => {
   await signIn({ onboarded: true });
   await page.goto("/decks");
   await page.getByRole("button", { name: "Thêm từ, bộ từ hoặc nhập CSV" }).click();
-  await page.getByRole("menuitem", { name: "Tạo bộ từ" }).click();
+  await page.getByRole("dialog", { name: "Thêm mới" }).getByRole("link", { name: "Tạo bộ từ" }).click();
   await page.getByLabel("Tên bộ từ").fill("IELTS");
   await page.getByRole("button", { name: "Tạo bộ từ" }).click();
   await expect(page.getByRole("heading", { name: "IELTS" })).toBeVisible();

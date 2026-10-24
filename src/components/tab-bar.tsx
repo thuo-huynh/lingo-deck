@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, FilePlus2, FileSpreadsheet, FolderPlus, Home, Layers, Plus, Settings } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useState } from "react";
+import { BottomSheet, SheetAction } from "@/components/bottom-sheet";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -16,6 +17,7 @@ const TABS = [
 /** Floating pill nav + add button, 28px above the bottom edge (design "Thanh điều hướng nổi"). */
 export function TabBar() {
   const path = usePathname();
+  const [adding, setAdding] = useState(false);
   // On a deck page, "Thêm từ" adds straight into that deck.
   const deckId = path.match(/^\/decks\/([a-f0-9]{24})/)?.[1];
   return (
@@ -40,32 +42,28 @@ export function TabBar() {
             );
           })}
         </nav>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            aria-label="Thêm từ, bộ từ hoặc nhập CSV"
-            className="pointer-events-auto grid size-16 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-nav outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
-          >
-            <Plus className="size-[26px]" strokeWidth={2} aria-hidden />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="top" align="end" sideOffset={12} className="w-56">
-            <DropdownMenuItem asChild className="min-h-11">
-              <Link href={deckId ? `/words/new?deck=${deckId}` : "/words/new"}>
-                <FilePlus2 /> Thêm từ
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="min-h-11">
-              <Link href={deckId ? `/decks/new?parent=${deckId}` : "/decks/new"}>
-                <FolderPlus /> {deckId ? "Thêm bộ con" : "Tạo bộ từ"}
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="min-h-11">
-              {/* Import needs a target deck; from elsewhere the library is where you pick one. */}
-              <Link href={deckId ? `/decks/${deckId}/import` : "/decks"}>
-                <FileSpreadsheet /> Nhập CSV
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <button
+          type="button"
+          aria-label="Thêm từ, bộ từ hoặc nhập CSV"
+          onClick={() => setAdding(true)}
+          className="pointer-events-auto grid size-16 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-nav outline-none transition-transform active:scale-95 focus-visible:ring-3 focus-visible:ring-ring/40"
+        >
+          <Plus className="size-[26px]" strokeWidth={2} aria-hidden />
+        </button>
+        <BottomSheet open={adding} onOpenChange={setAdding} title="Thêm mới">
+          <nav className="flex flex-col pb-2" onClick={() => setAdding(false)}>
+            <SheetAction href={deckId ? `/words/new?deck=${deckId}` : "/words/new"} icon={<FilePlus2 strokeWidth={1.75} />}>
+              Thêm từ
+            </SheetAction>
+            <SheetAction href={deckId ? `/decks/new?parent=${deckId}` : "/decks/new"} icon={<FolderPlus strokeWidth={1.75} />}>
+              {deckId ? "Thêm bộ con" : "Tạo bộ từ"}
+            </SheetAction>
+            {/* Import needs a target deck; from elsewhere the library is where you pick one. */}
+            <SheetAction href={deckId ? `/decks/${deckId}/import` : "/decks"} icon={<FileSpreadsheet strokeWidth={1.75} />}>
+              Nhập CSV
+            </SheetAction>
+          </nav>
+        </BottomSheet>
       </div>
     </div>
   );

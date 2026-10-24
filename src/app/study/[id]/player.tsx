@@ -5,16 +5,7 @@ import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmSheet } from "@/components/bottom-sheet";
 import { api } from "@/lib/client-api";
 import { cn } from "@/lib/utils";
 import type { SessionView } from "@/features/study/view";
@@ -111,18 +102,14 @@ export function StudyPlayer({ initial }: { initial: SessionView }) {
         )}
       </div>
 
-      <AlertDialog open={exiting} onOpenChange={setExiting}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Thoát buổi học?</AlertDialogTitle>
-            <AlertDialogDescription>Các từ đã trả lời được lưu. Bạn có thể học tiếp từ chỗ này sau.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Học tiếp</AlertDialogCancel>
-            <AlertDialogAction onClick={() => router.push("/")}>Thoát</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmSheet
+        open={exiting}
+        onOpenChange={setExiting}
+        title="Thoát buổi học?"
+        description="Các từ đã trả lời được lưu. Bạn có thể học tiếp từ chỗ này sau."
+        confirmLabel="Thoát"
+        onConfirm={() => router.push("/")}
+      />
     </div>
   );
 }

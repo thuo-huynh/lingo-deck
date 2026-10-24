@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BottomSheet } from "@/components/bottom-sheet";
 import { Switch } from "@/components/ui/switch";
 import { Segmented } from "@/components/segmented";
 import { inputClass } from "@/components/field";
@@ -41,6 +41,12 @@ type Deck = { id: string; label: string; color: string; hasChildren: boolean; st
 
 export function StudySetup({ decks, initialDeckId, initialMode, tags }: { decks: Deck[]; initialDeckId: string; initialMode: "scheduled" | "practice"; tags: string[] }) {
   const router = useRouter();
+  const [open, setOpen] = useState(true);
+  // Let the sheet slide away before leaving the page.
+  const close = () => {
+    setOpen(false);
+    setTimeout(() => router.push("/"), 250);
+  };
   const [deckId, setDeckId] = useState(initialDeckId);
   const deck = decks.find((d) => d.id === deckId)!;
   const [sub, setSub] = useState(true);
@@ -86,13 +92,12 @@ export function StudySetup({ decks, initialDeckId, initialMode, tags }: { decks:
   }
 
   return (
-    <div className="flex flex-1 flex-col justify-end bg-[rgba(24,29,38,0.32)] dark:bg-[rgba(0,0,0,0.56)]">
-      <div role="dialog" aria-labelledby="setup-title" className="mx-auto w-full max-w-md rounded-t-[20px] bg-card px-6 pt-3 pb-[max(24px,env(safe-area-inset-bottom))]">
-        <span className="mx-auto mb-3 block h-1 w-9 rounded-full bg-border-strong" aria-hidden />
+    <BottomSheet open={open} onOpenChange={(o) => !o && close()} title="Bạn muốn học thế nào?" hideTitle className="px-6">
+      <div className="overflow-y-auto pb-2">
         <div className="flex items-center justify-between">
-          <h1 id="setup-title" className="text-2xl font-semibold">Bạn muốn học thế nào?</h1>
-          <Button asChild variant="ghost" size="icon-lg" className="-mr-2 size-11">
-            <Link href="/" aria-label="Đóng"><X className="size-6" strokeWidth={1.75} /></Link>
+          <h1 className="text-2xl font-semibold">Bạn muốn học thế nào?</h1>
+          <Button variant="ghost" size="icon-lg" className="-mr-2 size-11" aria-label="Đóng" onClick={close}>
+            <X className="size-6" strokeWidth={1.75} />
           </Button>
         </div>
 
@@ -185,6 +190,6 @@ export function StudySetup({ decks, initialDeckId, initialMode, tags }: { decks:
           </Button>
         </div>
       </div>
-    </div>
+    </BottomSheet>
   );
 }
