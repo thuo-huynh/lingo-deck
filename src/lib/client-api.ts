@@ -18,7 +18,7 @@ export async function api<T = unknown>(path: string, init: { method?: string; bo
   }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    if (res.status === 401 && typeof window !== "undefined") window.location.href = "/login";
+    if (res.status === 401 && typeof window !== "undefined") window.location.replace("/login");
     throw new ApiError(res.status, data.error ?? "Có lỗi xảy ra");
   }
   return data as T;

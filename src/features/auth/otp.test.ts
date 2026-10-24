@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { useTestMongo } from "@/test/mongo";
+import { setupTestMongo } from "@/test/mongo";
 import { requestOtp, verifyOtp } from "./otp";
 
-useTestMongo();
+setupTestMongo();
 
 async function codeFor(email: string) {
   const spy = vi.spyOn(console, "info").mockImplementation(() => {});

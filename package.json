@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dev:db": "node scripts/dev-db.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

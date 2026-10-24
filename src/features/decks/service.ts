@@ -27,7 +27,10 @@ export async function createDeck(ownerId: ObjectId, raw: z.input<typeof deckInpu
   const { decks } = await collections();
   const parent = input.parentId ? await getOwnedDeck(ownerId, input.parentId) : null;
   const _id = new ObjectId();
-  const count = await decks.countDocuments({ ownerId, parentId: parent?._id ?? null });
+  const [count, total] = await Promise.all([
+    decks.countDocuments({ ownerId, parentId: parent?._id ?? null }),
+    decks.countDocuments({ ownerId }),
+  ]);
   const deck: DeckDoc = {
     _id,
     ownerId,
@@ -35,7 +38,7 @@ export async function createDeck(ownerId: ObjectId, raw: z.input<typeof deckInpu
     path: [...(parent?.path ?? []), _id],
     name: input.name,
     description: input.description,
-    color: input.color ?? DECK_COLORS[count % DECK_COLORS.length],
+    color: input.color ?? DECK_COLORS[total % DECK_COLORS.length],
     sortOrder: count,
     settings: null,
     archivedAt: null,

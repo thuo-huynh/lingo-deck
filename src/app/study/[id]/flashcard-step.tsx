@@ -61,9 +61,15 @@ export function FlashcardStep({ current, submit, onDone, autoplay }: { current: 
     flipRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement) return;
-      if (!flipped && (e.key === "Enter" || e.key === " ")) (e.preventDefault(), setFlipped(true));
-      else if (flipped && ["1", "2", "3", "4"].includes(e.key)) rate(RATINGS[Number(e.key) - 1].value);
-      else if (flipped && e.key === " ") (e.preventDefault(), audio.play());
+      if (!flipped && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        setFlipped(true);
+      } else if (flipped && ["1", "2", "3", "4"].includes(e.key)) {
+        rate(RATINGS[Number(e.key) - 1].value);
+      } else if (flipped && e.key === " ") {
+        e.preventDefault();
+        audio.play();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -107,6 +113,7 @@ export function FlashcardStep({ current, submit, onDone, autoplay }: { current: 
                 </div>
               )}
             </div>
+            {/* eslint-disable-next-line @next/next/no-img-element -- signed R2 redirect, not optimizable */}
             {card.imageUrl && <img src={card.imageUrl} alt="" className="max-h-40 w-full rounded-btn object-cover" />}
             {card.examples.map((ex, i) => (
               <div key={i} className="rounded-btn bg-muted p-4">

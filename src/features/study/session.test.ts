@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { describe, expect, it } from "vitest";
-import { useTestMongo } from "@/test/mongo";
+import { setupTestMongo } from "@/test/mongo";
 import { collections } from "@/lib/db";
 import { createDeck } from "@/features/decks/service";
 import { createVocab } from "@/features/vocab/service";
@@ -8,7 +8,7 @@ import { createSession, finishSession, submitStep } from "./session";
 import { updateDeckSettings } from "@/features/decks/service";
 import { DEFAULT_SETTINGS } from "@/features/decks/settings";
 
-useTestMongo();
+setupTestMongo();
 
 const now = new Date("2026-10-24T03:00:00Z");
 const user = { _id: new ObjectId(), timezone: "Asia/Ho_Chi_Minh", dayStartHour: 4 };

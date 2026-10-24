@@ -41,8 +41,11 @@ export function ChoiceList({
             tabIndex={on ? 0 : -1}
             onClick={() => onChange(o.id)}
             onKeyDown={(e) => {
-              if (e.key === "ArrowDown" || e.key === "ArrowRight") (e.preventDefault(), move(i + 1));
-              if (e.key === "ArrowUp" || e.key === "ArrowLeft") (e.preventDefault(), move(i - 1));
+              const delta = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+              if (delta) {
+                e.preventDefault();
+                move(i + delta);
+              }
             }}
             className={cn(
               "flex min-h-[64px] items-center gap-4 rounded-btn px-4 py-3 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-primary/30",

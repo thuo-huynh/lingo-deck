@@ -54,7 +54,10 @@ export function TypingStep({
   useEffect(() => {
     if (!listening) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === " " && !(e.target instanceof HTMLInputElement)) (e.preventDefault(), audio.play());
+      if (e.key === " " && !(e.target instanceof HTMLInputElement)) {
+        e.preventDefault();
+        audio.play();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

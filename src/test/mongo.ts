@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach } from "vitest";
 import { getDb } from "@/lib/db";
 
 /** Real MongoDB replica set in memory (transactions need a replica set), wiped between tests. */
-export function useTestMongo() {
+export function setupTestMongo() {
   let rs: MongoMemoryReplSet;
   beforeAll(async () => {
     rs = await MongoMemoryReplSet.create({ replSet: { count: 1, storageEngine: "wiredTiger" } });

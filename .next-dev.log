@@ -1,0 +1,63 @@
+
+> lingo@0.1.0 dev
+> next dev
+
+▲ Next.js 16.4.3 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.101:3000
+- Environments: .env.local
+✓ Ready in 515ms
+✓ Running next.config.ts took 36ms
+
+ GET /login 200 in 727ms (next.js: 525ms, application-code: 202ms)
+ GET /login 200 in 30ms (next.js: 1.2ms, application-code: 29ms)
+ GET /login 200 in 49ms (next.js: 0.9ms, application-code: 48ms)
+[dev] Mã đăng nhập cho test@lingo.test: 444576
+ POST /api/v1/auth/request-otp 200 in 616ms (next.js: 225ms, application-code: 390ms)
+ POST /api/v1/auth/verify-otp 200 in 191ms (next.js: 144ms, application-code: 46ms)
+ GET /onboarding 200 in 466ms (next.js: 389ms, proxy.ts: 6ms, application-code: 71ms)
+ GET /onboarding 200 in 49ms (next.js: 12ms, proxy.ts: 9ms, application-code: 28ms)
+ GET /login 200 in 51ms (next.js: 0.9ms, application-code: 50ms)
+ POST /api/v1/onboarding 200 in 569ms (next.js: 190ms, application-code: 379ms)
+ POST /api/v1/study/sessions 200 in 112ms (next.js: 51ms, application-code: 60ms)
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (0.5s elapsed so far; last modified: "\\\\?\\D:\\Coding\\2027\\lingo\\node_modules\\get-nonce\\dist\\es2015").
+ GET /study/6adc4aa1941855ddadbb4b6e 200 in 3.1s (next.js: 2.9s, proxy.ts: 10ms, application-code: 241ms)
+ GET /login 200 in 76ms (next.js: 1.5ms, application-code: 74ms)
+ POST /api/v1/study/sessions/6adc4aa1941855ddadbb4b6e/steps 200 in 1124ms (next.js: 1057ms, application-code: 67ms)
+ GET /api/v1/study/sessions/6adc4aa1941855ddadbb4b6e 200 in 1052ms (next.js: 1015ms, application-code: 37ms)
+ POST /api/v1/study/sessions/6adc4aa1941855ddadbb4b6e/steps 200 in 76ms (next.js: 16ms, application-code: 60ms)
+ GET /api/v1/study/sessions/6adc4aa1941855ddadbb4b6e 200 in 34ms (next.js: 18ms, application-code: 16ms)
+ POST /api/v1/study/sessions/6adc4aa1941855ddadbb4b6e/steps 200 in 71ms (next.js: 18ms, application-code: 52ms)
+ GET /api/v1/study/sessions/6adc4aa1941855ddadbb4b6e 200 in 41ms (next.js: 22ms, application-code: 19ms)
+ POST /api/v1/study/sessions/6adc4aa1941855ddadbb4b6e/steps 200 in 60ms (next.js: 31ms, application-code: 29ms)
+ GET /api/v1/study/sessions/6adc4aa1941855ddadbb4b6e 200 in 39ms (next.js: 17ms, application-code: 22ms)
+ POST /api/v1/study/sessions/6adc4aa1941855ddadbb4b6e/steps 200 in 40ms (next.js: 12ms, application-code: 28ms)
+ GET /api/v1/study/sessions/6adc4aa1941855ddadbb4b6e 200 in 24ms (next.js: 10ms, application-code: 15ms)
+ POST /api/v1/study/sessions/6adc4aa1941855ddadbb4b6e/finish 200 in 988ms (next.js: 974ms, application-code: 14ms)
+ GET / 200 in 727ms (next.js: 539ms, proxy.ts: 13ms, application-code: 175ms)
+ GET /login 200 in 39ms (next.js: 0.9ms, application-code: 38ms)
+ GET /login 200 in 33ms (next.js: 0.9ms, application-code: 32ms)
+ GET /decks 200 in 365ms (next.js: 279ms, proxy.ts: 6ms, application-code: 80ms)
+ GET /login 200 in 29ms (next.js: 1.0ms, application-code: 28ms)
+ GET /login 200 in 36ms (next.js: 0.8ms, application-code: 35ms)
+✓ Compiled in 89ms
+ GET /decks 200 in 146ms (next.js: 65ms, proxy.ts: 7ms, application-code: 74ms)
+ GET /login 200 in 31ms (next.js: 1.3ms, application-code: 30ms)
+ GET /decks/6adc4aa0941855ddadbb4b61 200 in 1276ms (next.js: 1198ms, proxy.ts: 3ms, application-code: 75ms)
+ GET /login 200 in 28ms (next.js: 0.8ms, application-code: 27ms)
+ GET /words/new?deck=6adc4aa0941855ddadbb4b61 200 in 461ms (next.js: 375ms, proxy.ts: 7ms, application-code: 79ms)
+ GET /login 200 in 44ms (next.js: 0.8ms, application-code: 43ms)
+ GET /login 200 in 28ms (next.js: 0.8ms, application-code: 27ms)
+ GET /settings 200 in 420ms (next.js: 337ms, proxy.ts: 3ms, application-code: 80ms)
+ GET /login 200 in 64ms (next.js: 0.9ms, application-code: 64ms)
+ GET /login 200 in 48ms (next.js: 0.8ms, application-code: 47ms)
+ GET /stats 200 in 358ms (next.js: 216ms, proxy.ts: 3ms, application-code: 139ms)
+ GET /login 200 in 35ms (next.js: 0.8ms, application-code: 34ms)
+ GET /login 200 in 27ms (next.js: 0.7ms, application-code: 27ms)
+ GET /study/setup?deck=6adc4aa0941855ddadbb4b61 200 in 357ms (next.js: 257ms, proxy.ts: 3ms, application-code: 96ms)
+ GET /login 200 in 29ms (next.js: 0.8ms, application-code: 28ms)
+ GET /login 200 in 43ms (next.js: 0.8ms, application-code: 42ms)
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (0.5s elapsed so far; last modified: "\\\\?\\D:\\Coding\\2027\\lingo\\node_modules\\@next\\swc-win32-x64-msvc").
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (0.5s elapsed so far; last modified: "\\\\?\\D:\\Coding\\2027\\lingo\\node_modules\\tapable\\lib").
+  Turbopack has seen frequent file updates and is waiting for the filesystem to settle (0.5s elapsed so far; last modified: "\\\\?\\D:\\Coding\\2027\\lingo\\node_modules\\safe-array-concat").
+✓ Compiled in 87ms

@@ -37,8 +37,9 @@ export function useAudio(card: { audioUrl?: string; speech?: string; languageCod
   );
 
   useEffect(() => {
-    if (autoplay && available) play();
+    const t = autoplay && available ? setTimeout(() => play(), 0) : undefined;
     return () => {
+      clearTimeout(t);
       audio.current?.pause();
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     };

@@ -1,13 +1,13 @@
 import { ObjectId } from "mongodb";
 import { describe, expect, it } from "vitest";
-import { useTestMongo } from "@/test/mongo";
+import { setupTestMongo } from "@/test/mongo";
 import { collections } from "@/lib/db";
 import type { UserDoc } from "@/lib/types";
 import { createDeck } from "@/features/decks/service";
 import { createVocab } from "@/features/vocab/service";
 import { dashboard } from "./service";
 
-useTestMongo();
+setupTestMongo();
 
 const user: UserDoc = {
   _id: new ObjectId(),

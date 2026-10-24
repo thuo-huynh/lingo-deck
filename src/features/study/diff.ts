@@ -9,8 +9,11 @@ export function markAnswer(expected: string, given: string) {
 
   const keep = new Array<boolean>(a.length).fill(false);
   for (let i = 0, j = 0; i < a.length && j < b.length; ) {
-    if (eq(a[i], b[j])) (keep[i] = true), i++, j++;
-    else if (dp[i + 1][j] >= dp[i][j + 1]) i++;
+    if (eq(a[i], b[j])) {
+      keep[i] = true;
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) i++;
     else j++;
   }
 

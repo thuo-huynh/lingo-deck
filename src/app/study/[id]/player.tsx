@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { toast } from "sonner";
@@ -33,39 +33,41 @@ export function StudyPlayer({ initial }: { initial: SessionView }) {
   const [exiting, setExiting] = useState(false);
   const [summary, setSummary] = useState(initial.summary);
 
-  const refresh = useCallback(async () => {
+  const active = !!view.current;
+  const finished = view.status === "finished";
+
+  async function refresh() {
     const next = await api<SessionView>(`/study/sessions/${view.id}`);
     setView(next);
     if (!next.current) setSummary(next.summary);
-  }, [view.id]);
+  }
 
   // Finishing is idempotent server-side; it stamps the end time for the summary.
   useEffect(() => {
-    if (view.current || view.status === "finished") return;
+    if (active || finished) return;
     api<NonNullable<SessionView["summary"]>>(`/study/sessions/${view.id}/finish`, { body: {} })
       .then(setSummary)
       .catch(() => {});
-  }, [view.current, view.id, view.status]);
+  }, [active, finished, view.id]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && view.current && setExiting(true);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && active) setExiting(true);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [view.current]);
+  }, [active]);
 
-  const submit: Submit = useCallback(
-    async (body) => {
-      try {
-        return await api<StepOutcome>(`/study/sessions/${view.id}/steps`, {
-          body: { itemIndex: view.current!.itemIndex, step: view.current!.step, ...body },
-        });
-      } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Không lưu được kết quả");
-        return null;
-      }
-    },
-    [view]
-  );
+  const submit: Submit = async (body) => {
+    try {
+      return await api<StepOutcome>(`/study/sessions/${view.id}/steps`, {
+        body: { itemIndex: view.current!.itemIndex, step: view.current!.step, ...body },
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không lưu được kết quả");
+      return null;
+    }
+  };
 
   if (!view.current) return <Summary summary={summary} />;
   const cur = view.current;
