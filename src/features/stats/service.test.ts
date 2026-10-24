@@ -5,7 +5,8 @@ import { collections } from "@/lib/db";
 import type { UserDoc } from "@/lib/types";
 import { createDeck } from "@/features/decks/service";
 import { createVocab } from "@/features/vocab/service";
-import { dashboard } from "./service";
+import { dashboard, stepAccuracy } from "./service";
+import { createSession, submitStep } from "@/features/study/session";
 
 setupTestMongo();
 
@@ -54,5 +55,25 @@ describe("dashboard", () => {
     const d = await dashboard(user, await decks.find().toArray(), now);
     expect(d.new).toBe(2);
     expect(d.counts(child._id).new).toBe(1);
+  });
+});
+
+describe("stepAccuracy", () => {
+  it("reports first-try accuracy per step from answered steps", async () => {
+    const deck = await createDeck(user._id, { name: "S" }, now);
+    await createVocab(user._id, { deckId: deck._id.toHexString(), term: "cat", meaningVi: "mèo" }, now);
+    await createVocab(user._id, { deckId: deck._id.toHexString(), term: "dog", meaningVi: "chó" }, now);
+    const s = await createSession(user, { deckId: deck._id.toHexString(), steps: ["FLASHCARD", "MEANING_TO_WORD"] }, now);
+    const id = s._id.toHexString();
+    await submitStep(user, id, { itemIndex: 0, step: "FLASHCARD", selfRating: "good" }, now);
+    await submitStep(user, id, { itemIndex: 0, step: "MEANING_TO_WORD", input: "cat" }, now);
+    await submitStep(user, id, { itemIndex: 1, step: "FLASHCARD", selfRating: "again" }, now);
+
+    const acc = await stepAccuracy(user._id);
+    expect(acc).toEqual({
+      FLASHCARD: { total: 2, correct: 1 },
+      MEANING_TO_WORD: { total: 1, correct: 1 },
+      AUDIO_TO_WORD: { total: 0, correct: 0 },
+    });
   });
 });

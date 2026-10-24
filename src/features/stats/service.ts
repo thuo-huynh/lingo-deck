@@ -3,6 +3,7 @@ import type { ObjectId } from "mongodb";
 import { collections } from "@/lib/db";
 import { studyDay } from "@/lib/day";
 import type { DeckDoc, UserDoc } from "@/lib/types";
+import { STEP_TYPES, type StepType } from "@/features/study/attempt";
 
 export type DeckCounts = { total: number; new: number; due: number; learning: number };
 const empty = (): DeckCounts => ({ total: 0, new: 0, due: 0, learning: 0 });
@@ -134,4 +135,39 @@ export async function history(user: UserDoc, now = new Date(), days = 14) {
     vocab.countDocuments({ ownerId: user._id, status: "active", "srs.state": "REVIEW" }),
   ]);
   return { series, retention: ret?.total ? ret.kept / ret.total : null, retentionSample: ret?.total ?? 0, totalWords, matureWords };
+}
+
+/** First-try accuracy per step over the last 30 days (spec 13.2: find the weak skill). */
+export async function stepAccuracy(userId: ObjectId, now = new Date()) {
+  const { sessions } = await collections();
+  const rows = await sessions
+    .aggregate<{ _id: StepType; total: number; correct: number }>([
+      { $match: { userId, startedAt: { $gte: new Date(now.getTime() - 30 * 86_400_000) } } },
+      { $unwind: "$items" },
+      { $unwind: "$items.results" },
+      {
+        $group: {
+          _id: "$items.results.step",
+          total: { $sum: 1 },
+          correct: {
+            $sum: {
+              $cond: [
+                {
+                  $or: [
+                    { $and: [{ $eq: ["$items.results.step", "FLASHCARD"] }, { $ne: ["$items.results.selfRating", "again"] }] },
+                    { $eq: ["$items.results.correct", true] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ])
+    .toArray();
+  const out = Object.fromEntries(STEP_TYPES.map((s) => [s, { total: 0, correct: 0 }])) as Record<StepType, { total: number; correct: number }>;
+  for (const r of rows) out[r._id] = { total: r.total, correct: r.correct };
+  return out;
 }
