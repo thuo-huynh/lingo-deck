@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { FolderPlus, MoreHorizontal, Pencil, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Download, FileSpreadsheet, FolderPlus, MoreHorizontal, Pencil, SlidersHorizontal, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -51,6 +51,12 @@ export function DeckMenu({ deckId, name }: { deckId: string; name: string }) {
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="min-h-11">
             <Link href={`/decks/${deckId}/settings`}><SlidersHorizontal /> Cài đặt học</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="min-h-11">
+            <Link href={`/decks/${deckId}/import`}><FileSpreadsheet /> Nhập CSV</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="min-h-11">
+            <a href={`/api/v1/decks/${deckId}/export`} download><Download /> Xuất CSV</a>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" className="min-h-11" onSelect={() => setConfirm(true)}>

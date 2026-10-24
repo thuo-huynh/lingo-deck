@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, FilePlus2, FolderPlus, Home, Layers, Plus, Settings } from "lucide-react";
+import { BarChart3, FilePlus2, FileSpreadsheet, FolderPlus, Home, Layers, Plus, Settings } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +56,12 @@ export function TabBar() {
             <DropdownMenuItem asChild className="min-h-11">
               <Link href={deckId ? `/decks/new?parent=${deckId}` : "/decks/new"}>
                 <FolderPlus /> {deckId ? "Thêm bộ con" : "Tạo bộ từ"}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="min-h-11">
+              {/* Import needs a target deck; from elsewhere the library is where you pick one. */}
+              <Link href={deckId ? `/decks/${deckId}/import` : "/decks"}>
+                <FileSpreadsheet /> Nhập CSV
               </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>

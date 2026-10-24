@@ -2,8 +2,9 @@ import "server-only";
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { collections } from "@/lib/db";
-import { notFound, parseId } from "@/lib/errors";
-import type { VocabDoc } from "@/lib/types";
+import { badRequest, notFound, parseId } from "@/lib/errors";
+import type { DeckDoc, VocabDoc } from "@/lib/types";
+import { CSV_COLUMNS, previewImport, toCsv } from "./csv";
 import { getOwnedDeck } from "@/features/decks/service";
 import { newSrs } from "@/features/scheduling/fsrs";
 
@@ -34,7 +35,13 @@ export async function createVocab(ownerId: ObjectId, raw: z.input<typeof vocabIn
   const input = vocabInput.parse(raw);
   const deck = await getOwnedDeck(ownerId, input.deckId);
   const { vocab } = await collections();
-  const doc: VocabDoc = {
+  const doc = buildVocab(ownerId, deck, input, now);
+  await vocab.insertOne(doc);
+  return doc;
+}
+
+function buildVocab(ownerId: ObjectId, deck: DeckDoc, input: z.output<typeof vocabInput>, now: Date): VocabDoc {
+  return {
     _id: new ObjectId(),
     ownerId,
     deckId: deck._id,
@@ -56,8 +63,59 @@ export async function createVocab(ownerId: ObjectId, raw: z.input<typeof vocabIn
     createdAt: now,
     updatedAt: now,
   };
-  await vocab.insertOne(doc);
-  return doc;
+}
+
+const MAX_IMPORT_BYTES = 1_000_000;
+const MAX_IMPORT_ROWS = 2000;
+
+/** CSV import (spec SCR-13): preview validates; commit re-validates server-side and inserts only valid rows. */
+export async function importCsv(ownerId: ObjectId, deckId: string, csv: string, commit: boolean, now = new Date()) {
+  if (csv.length > MAX_IMPORT_BYTES) throw badRequest("File quá lớn (tối đa 1 MB)");
+  const deck = await getOwnedDeck(ownerId, deckId);
+  const { vocab } = await collections();
+  const existing = await vocab.distinct("term", { ownerId, deckId: deck._id, status: { $ne: "archived" } });
+  let rows;
+  try {
+    rows = previewImport(csv, existing);
+  } catch (e) {
+    throw badRequest(e instanceof Error ? e.message : "File CSV không hợp lệ");
+  }
+  if (rows.length > MAX_IMPORT_ROWS) throw badRequest(`Tối đa ${MAX_IMPORT_ROWS} dòng mỗi lần nhập`);
+  if (!commit) return { rows, imported: 0 };
+  // Every row goes through the same validation as the editor; a row that fails is reported, not inserted.
+  // Imported words take the language already used in this deck tree.
+  const last = await vocab.findOne({ ownerId, deckPath: deck.path[0] }, { sort: { createdAt: -1 }, projection: { languageCode: 1 } });
+  const docs: VocabDoc[] = [];
+  for (const r of rows) {
+    if (r.status !== "ok" || !r.input) continue;
+    const parsed = vocabInput.safeParse({ ...r.input, deckId, languageCode: last?.languageCode ?? "en-US" });
+    if (parsed.success) docs.push(buildVocab(ownerId, deck, parsed.data, now));
+    else Object.assign(r, { status: "error", note: parsed.error.issues[0]?.message });
+  }
+  if (docs.length) await vocab.insertMany(docs);
+  return { rows, imported: docs.length };
+}
+
+export async function exportCsv(ownerId: ObjectId, deckId: string) {
+  const deck = await getOwnedDeck(ownerId, deckId);
+  const { vocab } = await collections();
+  const words = await vocab.find({ ownerId, deckPath: deck._id, status: { $ne: "archived" } }).sort({ createdAt: 1 }).toArray();
+  return {
+    name: deck.name,
+    csv: toCsv([
+      [...CSV_COLUMNS],
+      ...words.map((w) => [
+        w.term,
+        w.meaningVi,
+        w.examples[0]?.text ?? "",
+        w.examples[0]?.translationVi ?? "",
+        w.phonetic ?? "",
+        w.partOfSpeech ?? "",
+        w.tags.join(";"),
+        w.acceptedAnswers.filter((a) => a !== w.term).join(";"),
+      ]),
+    ]),
+  };
 }
 
 export async function getOwnedVocab(ownerId: ObjectId, id: string) {
