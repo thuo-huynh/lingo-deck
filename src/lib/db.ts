@@ -1,3 +1,4 @@
+import { attachDatabasePool } from "@vercel/functions";
 import { MongoClient, type Db } from "mongodb";
 import type { DeckDoc, OtpDoc, ReviewLogDoc, SessionDoc, UserDoc, VocabDoc } from "./types";
 
@@ -9,7 +10,10 @@ export function getClient() {
   // Reuse one client across hot reloads and serverless invocations.
   if (!globalForDb.mongo || globalForDb.mongoUri !== uri) {
     globalForDb.mongoUri = uri;
-    globalForDb.mongo = new MongoClient(uri, { ignoreUndefined: true }).connect().then(async (c) => {
+    const client = new MongoClient(uri, { ignoreUndefined: true });
+    // Lets Vercel Functions close idle pool connections before an instance is suspended (no leaked Atlas connections).
+    attachDatabasePool(client);
+    globalForDb.mongo = client.connect().then(async (c) => {
       await ensureIndexes(c.db(process.env.MONGODB_DB ?? "lingodeck"));
       return c;
     });
