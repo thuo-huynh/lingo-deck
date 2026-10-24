@@ -97,7 +97,7 @@ export async function createSession(user: Learner, raw: z.input<typeof createSes
     startedAt: now,
     finishedAt: null,
   };
-  await sessions.insertOne(session);
+  if (session.items.length) await sessions.insertOne(session);
   return session;
 }
 

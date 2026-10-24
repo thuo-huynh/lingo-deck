@@ -87,10 +87,13 @@ export async function archiveDeck(ownerId: ObjectId, deckId: string, now = new D
 }
 
 export async function getDeckSettings(ownerId: ObjectId, deck: DeckDoc): Promise<DeckSettings> {
-  const { decks } = await collections();
-  const chain = await decks.find({ ownerId, _id: { $in: deck.path } }).toArray();
+  const { decks, users } = await collections();
+  const [chain, user] = await Promise.all([
+    decks.find({ ownerId, _id: { $in: deck.path } }).toArray(),
+    users.findOne({ _id: ownerId }, { projection: { defaultSettings: 1 } }),
+  ]);
   const byId = new Map(chain.map((d) => [d._id.toHexString(), d]));
-  return resolveSettings([...deck.path].reverse().map((id) => byId.get(id.toHexString())!).filter(Boolean));
+  return resolveSettings([...deck.path].reverse().map((id) => byId.get(id.toHexString())!).filter(Boolean), user?.defaultSettings);
 }
 
 export async function updateDeckSettings(ownerId: ObjectId, deckId: string, raw: unknown) {

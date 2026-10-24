@@ -2,7 +2,7 @@ import { z } from "zod";
 import { handler } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth";
 import { collections } from "@/lib/db";
-import { createDeck, listDecks, updateDeckSettings } from "@/features/decks/service";
+import { createDeck, listDecks } from "@/features/decks/service";
 import { DEFAULT_SETTINGS } from "@/features/decks/settings";
 import { createVocab } from "@/features/vocab/service";
 import { LANGUAGES, STARTER_EN } from "@/features/onboarding/starter";
@@ -44,7 +44,7 @@ export const POST = handler(async (req: Request) => {
       }
     }
   }
-  await updateDeckSettings(user._id, deckId, { ...DEFAULT_SETTINGS, newPerDay, steps: ALL_STEPS.slice(0, stepCount) });
-  await users.updateOne({ _id: user._id }, { $set: { onboarded: true, dailyGoal: newPerDay } });
+  const defaultSettings = { ...(user.defaultSettings ?? DEFAULT_SETTINGS), newPerDay, steps: ALL_STEPS.slice(0, stepCount) };
+  await users.updateOne({ _id: user._id }, { $set: { onboarded: true, dailyGoal: newPerDay, defaultSettings } });
   return { deckId };
 });

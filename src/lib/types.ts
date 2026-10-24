@@ -9,6 +9,8 @@ export type UserDoc = {
   dayStartHour: number;
   dailyGoal: number;
   onboarded: boolean;
+  /** Preset "Mặc định": used by every deck chain without its own settings. */
+  defaultSettings?: DeckSettings;
   createdAt: Date;
 };
 

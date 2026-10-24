@@ -2,7 +2,8 @@ import "server-only";
 import type { ObjectId } from "mongodb";
 import { collections } from "@/lib/db";
 import type { SessionDoc, VocabDoc } from "@/lib/types";
-import { evaluateAttempt, type StepType } from "./attempt";
+import { schedule } from "@/features/scheduling/fsrs";
+import { evaluateAttempt, type Rating, type StepType } from "./attempt";
 import { summarize } from "./session";
 
 export const mediaUrl = (key?: string) => (key ? `/api/v1/media/${key}` : undefined);
@@ -29,7 +30,29 @@ export function buildHints(word: Pick<VocabDoc, "term" | "hints" | "examples" | 
   return out;
 }
 
-export function cardFor(step: StepType, word: VocabDoc, session: SessionDoc) {
+export function formatInterval(ms: number) {
+  const min = Math.round(ms / 60_000);
+  if (min < 1) return "<1 phút";
+  if (min < 60) return `${min} phút`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `${h} giờ`;
+  const d = Math.round(h / 24);
+  if (d < 31) return `${d} ngày`;
+  const m = Math.round(d / 30);
+  return m < 12 ? `${m} tháng` : `${Math.round(d / 365)} năm`;
+}
+
+/** Next-review previews, only meaningful when the self-rating is the attempt's final rating. */
+function previews(word: VocabDoc, session: SessionDoc, now: Date) {
+  if (session.rescheduleMode !== "scheduled" || session.steps.length !== 1 || session.steps[0] !== "FLASHCARD") return undefined;
+  const out = {} as Record<Rating, string>;
+  for (const r of ["again", "hard", "good", "easy"] as const) {
+    out[r] = formatInterval(schedule(word.srs, r, now, session.settings).due.getTime() - now.getTime());
+  }
+  return out;
+}
+
+export function cardFor(step: StepType, word: VocabDoc, session: SessionDoc, now = new Date()) {
   const base = {
     languageCode: word.languageCode,
     partOfSpeech: word.partOfSpeech,
@@ -45,6 +68,8 @@ export function cardFor(step: StepType, word: VocabDoc, session: SessionDoc) {
       notes: word.notes,
       audioUrl: mediaUrl(word.audioKey),
       speech: word.term,
+      tags: word.tags,
+      intervals: previews(word, session, now),
     };
   }
   const hints = session.settings.allowHints ? buildHints(word) : [];

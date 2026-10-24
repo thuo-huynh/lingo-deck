@@ -85,3 +85,39 @@ export async function dashboard(user: UserDoc, decks: DeckDoc[], now = new Date(
 
   return { ...totals, wordsToday, introducedToday, streak, counts };
 }
+
+export async function history(user: UserDoc, now = new Date(), days = 14) {
+  const { reviewLogs, vocab } = await collections();
+  const today = studyDay(now, user.timezone, user.dayStartHour);
+  const since = new Date(today.start.getTime() - (days - 1) * 86_400_000 - 3_600_000);
+  const rows = await reviewLogs
+    .aggregate<{ _id: string; words: number }>([
+      { $match: { userId: user._id, reviewedAt: { $gte: since } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", timezone: user.timezone, date: { $subtract: ["$reviewedAt", user.dayStartHour * 3_600_000] } } },
+          ids: { $addToSet: "$vocabId" },
+        },
+      },
+      { $project: { words: { $size: "$ids" } } },
+    ])
+    .toArray();
+  const byDay = new Map(rows.map((r) => [r._id, r.words]));
+  const series = Array.from({ length: days }, (_, i) => {
+    const d = studyDay(new Date(today.start.getTime() - (days - 1 - i) * 86_400_000 + 3_600_000), user.timezone, user.dayStartHour);
+    return { day: d.key, words: byDay.get(d.key) ?? 0 };
+  });
+
+  // Retention: share of scheduled reviews of already-learned words that were not forgotten (spec 13.2).
+  const [ret] = await reviewLogs
+    .aggregate<{ total: number; kept: number }>([
+      { $match: { userId: user._id, rescheduleMode: "scheduled", "previous.state": "REVIEW", reviewedAt: { $gte: new Date(now.getTime() - 30 * 86_400_000) } } },
+      { $group: { _id: null, total: { $sum: 1 }, kept: { $sum: { $cond: [{ $ne: ["$rating", "again"] }, 1, 0] } } } },
+    ])
+    .toArray();
+  const [totalWords, matureWords] = await Promise.all([
+    vocab.countDocuments({ ownerId: user._id, status: "active" }),
+    vocab.countDocuments({ ownerId: user._id, status: "active", "srs.state": "REVIEW" }),
+  ]);
+  return { series, retention: ret?.total ? ret.kept / ret.total : null, retentionSample: ret?.total ?? 0, totalWords, matureWords };
+}

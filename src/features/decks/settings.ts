@@ -42,6 +42,6 @@ export const settingsSchema = z.object({
 }) satisfies z.ZodType<DeckSettings>;
 
 /** Walks from the deck up to the root and returns the first explicit settings. */
-export function resolveSettings(chain: { settings: DeckSettings | null }[]): DeckSettings {
-  return chain.find((d) => d.settings)?.settings ?? DEFAULT_SETTINGS;
+export function resolveSettings(chain: { settings: DeckSettings | null }[], userDefault?: DeckSettings): DeckSettings {
+  return chain.find((d) => d.settings)?.settings ?? userDefault ?? DEFAULT_SETTINGS;
 }
