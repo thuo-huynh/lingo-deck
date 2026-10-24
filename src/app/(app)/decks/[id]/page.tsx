@@ -104,7 +104,10 @@ export default async function DeckPage(props: PageProps<"/decks/[id]">) {
                 <span className="truncate font-medium">{w.term}</span>
                 <span className="truncate text-[13px] leading-[18px] text-muted-foreground">{w.meaningVi}</span>
               </span>
-              <span className="text-[13px] text-muted-foreground">{w.status === "suspended" ? "Tạm dừng" : STATE_LABEL[w.srs.state]}</span>
+              <span className="flex flex-col items-end text-[13px] text-muted-foreground">
+                {w.status === "suspended" ? "Tạm dừng" : STATE_LABEL[w.srs.state]}
+                {w.leech && <span className="rounded-full bg-hard-soft px-2 font-medium text-hard">Khó nhớ</span>}
+              </span>
               <ChevronRight className="size-5 text-muted-foreground" strokeWidth={1.75} aria-hidden />
             </Link>
           ))}

@@ -2,6 +2,8 @@ import { z } from "zod";
 import { STEP_TYPES } from "@/features/study/attempt";
 import type { DeckSettings } from "@/lib/types";
 
+export const DEFAULT_LEECH_THRESHOLD = 8;
+
 // Product defaults from spec 5.3 / 10.3.
 export const DEFAULT_SETTINGS: DeckSettings = {
   newPerDay: 10,
@@ -16,6 +18,7 @@ export const DEFAULT_SETTINGS: DeckSettings = {
   learningSteps: ["1m", "10m"],
   relearningSteps: ["10m"],
   maximumInterval: 36500,
+  leechThreshold: DEFAULT_LEECH_THRESHOLD,
 };
 
 const stepUnit = z.string().regex(/^\d+(m|h|d)$/);
@@ -39,6 +42,7 @@ export const settingsSchema = z.object({
   learningSteps: z.array(stepUnit).max(10),
   relearningSteps: z.array(stepUnit).max(10),
   maximumInterval: z.number().int().min(1).max(36500),
+  leechThreshold: z.number().int().min(2).max(99).optional(),
 }) satisfies z.ZodType<DeckSettings>;
 
 /** Walks from the deck up to the root and returns the first explicit settings. */

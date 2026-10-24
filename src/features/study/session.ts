@@ -6,7 +6,7 @@ import { studyDay } from "@/lib/day";
 import { AppError, conflict, notFound, parseId } from "@/lib/errors";
 import type { DeckSettings, ReviewLogDoc, SessionDoc, SessionItem, VocabDoc } from "@/lib/types";
 import { getDeckSettings, getOwnedDeck } from "@/features/decks/service";
-import { stepsSchema } from "@/features/decks/settings";
+import { DEFAULT_LEECH_THRESHOLD, stepsSchema } from "@/features/decks/settings";
 import { ALGORITHM, schedule } from "@/features/scheduling/fsrs";
 import { checkAnswer } from "./answer";
 import { evaluateAttempt, type AttemptEvaluation, type StepResult } from "./attempt";
@@ -24,7 +24,7 @@ export const createSessionInput = z.object({
   limit: z.number().int().min(1).max(200).optional(),
   steps: stepsSchema.optional(),
   /** CUSTOM only */
-  filter: z.enum(["failed_today", "all", "tag"]).optional(),
+  filter: z.enum(["failed_today", "all", "tag", "weak", "extra_new", "extra_review"]).optional(),
   tag: z.string().max(40).optional(),
 });
 
@@ -40,7 +40,9 @@ export async function createSession(user: Learner, raw: z.input<typeof createSes
   };
   const day = studyDay(now, user.timezone, user.dayStartHour);
   // Cram / custom study never touches the schedule unless explicitly asked (spec 6.2).
-  const rescheduleMode = input.rescheduleMode ?? (input.mode === "DAILY" ? "scheduled" : "practice_only");
+  // Extra new/reviews go through the scheduler like daily study (spec 6.2); everything else custom is practice.
+  const schedules = input.mode === "DAILY" || input.filter === "extra_new" || input.filter === "extra_review";
+  const rescheduleMode = input.rescheduleMode ?? (schedules ? "scheduled" : "practice_only");
 
   let picked: { word: VocabDoc; isNew: boolean }[];
   if (input.mode === "DAILY") {
@@ -77,7 +79,18 @@ export async function createSession(user: Learner, raw: z.input<typeof createSes
       const failed = await reviewLogs.distinct("vocabId", { userId: user._id, rating: "again", reviewedAt: { $gte: day.start } });
       filter._id = { $in: failed };
     }
-    const words = await vocab.find(filter).sort({ "srs.due": 1 }).limit(input.limit ?? 20).toArray();
+    let sort: Record<string, 1 | -1> = { "srs.due": 1 };
+    if (input.filter === "extra_new") {
+      filter["srs.state"] = "NEW";
+      sort = { createdAt: 1 };
+    }
+    if (input.filter === "extra_review") Object.assign(filter, dueFilter(now, day.end));
+    if (input.filter === "weak") {
+      filter["srs.state"] = { $ne: "NEW" };
+      filter.$or = [{ "srs.card.lapses": { $gt: 0 } }, { leech: true }];
+      sort = { "srs.card.lapses": -1, "srs.card.difficulty": -1 };
+    }
+    const words = await vocab.find(filter).sort(sort).limit(input.limit ?? 20).toArray();
     picked = words.map((word) => ({ word, isNew: word.srs.state === "NEW" }));
   }
   picked = picked.slice(0, input.limit ?? picked.length);
@@ -260,7 +273,9 @@ async function finalizeAttempt(
       await reviewLogs.insertOne(log, { session: s });
       if (next) {
         // Optimistic lock: a second tab reviewing the same word from the same revision loses.
-        const v = await vocab.updateOne({ _id: word._id, "srs.revision": word.srs.revision }, { $set: { srs: next } }, { session: s });
+        // Leech (spec 5.4): flag, never delete or auto-suspend.
+        const leech = next.card.lapses >= (session.settings.leechThreshold ?? DEFAULT_LEECH_THRESHOLD) ? { leech: true } : {};
+        const v = await vocab.updateOne({ _id: word._id, "srs.revision": word.srs.revision }, { $set: { srs: next, ...leech } }, { session: s });
         if (!v.modifiedCount) throw conflict("Từ này vừa được ôn ở nơi khác");
       }
     })

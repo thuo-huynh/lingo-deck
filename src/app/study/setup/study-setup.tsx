@@ -17,17 +17,29 @@ const ALL: StepType[] = ["FLASHCARD", "MEANING_TO_WORD", "AUDIO_TO_WORD"];
 const MODES = [
   { value: "scheduled", label: "Ôn theo lịch" },
   { value: "practice", label: "Luyện tập" },
-  { value: "failed", label: "Từ sai" },
 ] as const;
 const MODE_HINT = {
   scheduled: "Kết quả cập nhật lịch ôn.",
   practice: "Chỉ luyện, không thay đổi lịch ôn.",
-  failed: "Ôn lại các từ đã sai hôm nay. Không thay đổi lịch ôn.",
 };
+// Custom Study (spec 6.2): what to pull in for each mode.
+const SCOPES = {
+  scheduled: [
+    { value: "", label: "Theo hạn mức hôm nay" },
+    { value: "extra_new", label: "Học thêm từ mới (vượt hạn mức)" },
+    { value: "extra_review", label: "Ôn thêm từ đến hạn (vượt hạn mức)" },
+  ],
+  practice: [
+    { value: "all", label: "Tất cả từ" },
+    { value: "failed_today", label: "Từ sai hôm nay" },
+    { value: "weak", label: "Từ yếu (hay quên)" },
+    { value: "tag", label: "Theo tag" },
+  ],
+} as const;
 
 type Deck = { id: string; label: string; color: string; hasChildren: boolean; steps: StepType[] };
 
-export function StudySetup({ decks, initialDeckId, initialMode }: { decks: Deck[]; initialDeckId: string; initialMode: "scheduled" | "practice" }) {
+export function StudySetup({ decks, initialDeckId, initialMode, tags }: { decks: Deck[]; initialDeckId: string; initialMode: "scheduled" | "practice"; tags: string[] }) {
   const router = useRouter();
   const [deckId, setDeckId] = useState(initialDeckId);
   const deck = decks.find((d) => d.id === deckId)!;
@@ -35,6 +47,8 @@ export function StudySetup({ decks, initialDeckId, initialMode }: { decks: Deck[
   const [limit, setLimit] = useState<number | "">("");
   const [stepCount, setStepCount] = useState<1 | 2 | 3 | null>(null);
   const [mode, setMode] = useState<(typeof MODES)[number]["value"]>(initialMode);
+  const [scope, setScope] = useState<string>(initialMode === "practice" ? "all" : "");
+  const [tag, setTag] = useState(tags[0] ?? "");
   const [busy, setBusy] = useState(false);
   const [empty, setEmpty] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,9 +65,10 @@ export function StudySetup({ decks, initialDeckId, initialMode }: { decks: Deck[
           deckId,
           includeSubdecks: sub,
           steps,
-          limit: limit || (mode === "scheduled" ? undefined : 20),
-          mode: mode === "scheduled" ? "DAILY" : "CUSTOM",
-          filter: mode === "failed" ? "failed_today" : mode === "practice" ? "all" : undefined,
+          limit: limit || (mode === "scheduled" && !scope ? undefined : 20),
+          mode: scope ? "CUSTOM" : "DAILY",
+          filter: scope || undefined,
+          tag: scope === "tag" ? tag : undefined,
         },
       });
       if (!s.total) {
@@ -102,7 +117,7 @@ export function StudySetup({ decks, initialDeckId, initialMode }: { decks: Deck[
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] leading-[18px] font-medium text-body">Số từ</span>
             <select className={inputClass} value={limit} onChange={(e) => setLimit(e.target.value ? Number(e.target.value) : "")}>
-              <option value="">{mode === "scheduled" ? "Theo hạn mức hôm nay" : "20 từ"}</option>
+              <option value="">{mode === "scheduled" && !scope ? "Theo hạn mức hôm nay" : "20 từ"}</option>
               {[5, 10, 20, 50].map((n) => (
                 <option key={n} value={n}>{n} từ</option>
               ))}
@@ -122,14 +137,42 @@ export function StudySetup({ decks, initialDeckId, initialMode }: { decks: Deck[
 
           <div className="flex flex-col gap-1.5">
             <span className="text-[13px] leading-[18px] font-medium text-body">Chế độ</span>
-            <Segmented label="Chế độ học" value={mode} onChange={setMode} options={MODES} />
+            <Segmented
+              label="Chế độ học"
+              value={mode}
+              onChange={(m) => {
+                setMode(m);
+                setScope(m === "practice" ? "all" : "");
+              }}
+              options={MODES}
+            />
             <span className="text-[13px] leading-[18px] text-muted-foreground">{MODE_HINT[mode]}</span>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="scope" className="text-[13px] leading-[18px] font-medium text-body">Nội dung</label>
+            <select id="scope" className={inputClass} value={scope} onChange={(e) => setScope(e.target.value)}>
+              {SCOPES[mode].map((o) => (
+                <option key={o.value} value={o.value} disabled={o.value === "tag" && !tags.length}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            {scope === "tag" && (
+              <select aria-label="Tag" className={inputClass} value={tag} onChange={(e) => setTag(e.target.value)}>
+                {tags.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div aria-live="polite" className="min-h-[18px] text-[13px] leading-[18px]">
             {empty && (
               <span className="text-body">
-                {mode === "scheduled" ? "Hôm nay không còn từ nào cần học trong bộ này. Thử chế độ Luyện tập nhé!" : "Không có từ nào phù hợp."}
+                {mode === "scheduled" && !scope
+                  ? "Hôm nay không còn từ nào cần học trong bộ này. Thử Học thêm từ mới hoặc chế độ Luyện tập nhé!"
+                  : "Không có từ nào phù hợp."}
               </span>
             )}
             {error && <span className="text-destructive">{error}</span>}

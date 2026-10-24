@@ -179,3 +179,63 @@ describe("resumableSession", () => {
     expect(await resumableSession(new ObjectId())).toBeNull();
   });
 });
+
+describe("leech detection (AC-16)", () => {
+  it("flags a word as a leech once it has been forgotten leechThreshold times, without deleting progress", async () => {
+    const { w, id } = await oneWordSession({ steps: ["FLASHCARD"] });
+    const { vocab } = await collections();
+    // A learned word that has already lapsed 7 times, due now.
+    await vocab.updateOne({ _id: w._id }, { $set: { "srs.state": "REVIEW", "srs.card.state": 2, "srs.card.lapses": 7, "srs.card.stability": 3, "srs.card.difficulty": 8, "srs.card.reps": 12, "srs.card.last_review": new Date(now.getTime() - 3 * 86_400_000), "srs.due": now } });
+    await submitStep(user, id, { itemIndex: 0, step: "FLASHCARD", selfRating: "again" }, now);
+    const after = await vocab.findOne({ _id: w._id });
+    expect(after!.leech).toBe(true);
+    expect(after!.status).toBe("active");
+    expect(after!.srs.card.lapses).toBe(8);
+  });
+});
+
+describe("custom study", () => {
+  async function deckWith(n: number) {
+    const deck = await createDeck(user._id, { name: `D${n}` }, now);
+    const words = [];
+    for (let i = 0; i < n; i++) words.push(await word(deck._id, `w${i}`));
+    return { deck, words, id: deck._id.toHexString() };
+  }
+
+  it("by tag: only words with that tag, practice only", async () => {
+    const { id, words } = await deckWith(3);
+    const { vocab } = await collections();
+    await vocab.updateOne({ _id: words[1]._id }, { $set: { tags: ["food"] } });
+    const s = await createSession(user, { deckId: id, mode: "CUSTOM", filter: "tag", tag: "food" }, now);
+    expect(s.items.map((i) => i.vocabId)).toEqual([words[1]._id]);
+    expect(s.rescheduleMode).toBe("practice_only");
+  });
+
+  it("extra new: new words beyond today's quota, scheduled", async () => {
+    const { id } = await deckWith(15);
+    const daily = await createSession(user, { deckId: id }, now);
+    expect(daily.items).toHaveLength(10);
+    const extra = await createSession(user, { deckId: id, mode: "CUSTOM", filter: "extra_new", limit: 5 }, now);
+    expect(extra.items).toHaveLength(5);
+    expect(extra.rescheduleMode).toBe("scheduled");
+  });
+
+  it("extra reviews: due reviews beyond the daily review limit, scheduled", async () => {
+    const { id } = await deckWith(3);
+    const { vocab } = await collections();
+    await vocab.updateMany({}, { $set: { "srs.state": "REVIEW", "srs.due": now } });
+    const extra = await createSession(user, { deckId: id, mode: "CUSTOM", filter: "extra_review" }, now);
+    expect(extra.items).toHaveLength(3);
+    expect(extra.rescheduleMode).toBe("scheduled");
+  });
+
+  it("weak words: most-forgotten first, practice only, never brand-new words", async () => {
+    const { id, words } = await deckWith(3);
+    const { vocab } = await collections();
+    await vocab.updateOne({ _id: words[0]._id }, { $set: { "srs.state": "REVIEW", "srs.card.lapses": 1 } });
+    await vocab.updateOne({ _id: words[2]._id }, { $set: { "srs.state": "REVIEW", "srs.card.lapses": 4 } });
+    const s = await createSession(user, { deckId: id, mode: "CUSTOM", filter: "weak" }, now);
+    expect(s.items.map((i) => i.vocabId)).toEqual([words[2]._id, words[0]._id]);
+    expect(s.rescheduleMode).toBe("practice_only");
+  });
+});

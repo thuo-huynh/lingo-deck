@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getDeckSettings, listDecks } from "@/features/decks/service";
+import { collections } from "@/lib/db";
 import { StudySetup } from "./study-setup";
 
 export default async function StudySetupPage(props: PageProps<"/study/setup">) {
@@ -18,6 +19,8 @@ export default async function StudySetupPage(props: PageProps<"/study/setup">) {
       steps: (await getDeckSettings(user._id, d)).steps,
     }))
   );
+  const { vocab } = await collections();
+  const tags = ((await vocab.distinct("tags", { ownerId: user._id, status: "active" })) as string[]).sort();
   const initial = typeof deckParam === "string" && byId.has(deckParam) ? deckParam : options[0].id;
-  return <StudySetup decks={options} initialDeckId={initial} initialMode={mode === "practice" ? "practice" : "scheduled"} />;
+  return <StudySetup decks={options} initialDeckId={initial} initialMode={mode === "practice" ? "practice" : "scheduled"} tags={tags} />;
 }

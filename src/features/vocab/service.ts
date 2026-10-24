@@ -165,7 +165,7 @@ export async function setVocabStatus(ownerId: ObjectId, id: string, status: Voca
 export async function resetVocabProgress(ownerId: ObjectId, id: string, now = new Date()) {
   const current = await getOwnedVocab(ownerId, id);
   const { vocab } = await collections();
-  await vocab.updateOne({ _id: current._id }, { $set: { srs: { ...newSrs(now), revision: current.srs.revision + 1 }, updatedAt: now } });
+  await vocab.updateOne({ _id: current._id }, { $set: { srs: { ...newSrs(now), revision: current.srs.revision + 1 }, updatedAt: now }, $unset: { leech: "" } });
 }
 
 export async function listDeckVocab(ownerId: ObjectId, deckId: string, opts: { q?: string; includeSubdecks?: boolean; limit?: number; skip?: number } = {}) {

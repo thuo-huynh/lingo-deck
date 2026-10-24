@@ -109,6 +109,10 @@ export function SettingsForm({ initial, endpoint, footer }: { initial: DeckSetti
               <span className="text-[13px] leading-[18px] font-medium text-body">Khoảng ôn tối đa (ngày)</span>
               <input type="number" inputMode="numeric" min={1} max={36500} className={inputClass} value={s.maximumInterval} onChange={(e) => set("maximumInterval", Number(e.target.value) || 1)} />
             </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[13px] leading-[18px] font-medium text-body">Đánh dấu “khó nhớ” sau số lần quên</span>
+              <input type="number" inputMode="numeric" min={2} max={99} className={inputClass} value={s.leechThreshold ?? 8} onChange={(e) => set("leechThreshold", Number(e.target.value) || 8)} />
+            </label>
             <div className="flex min-h-11 items-center justify-between">
               <span>Phân biệt hoa/thường khi gõ</span>
               <Switch checked={s.caseSensitive} onCheckedChange={(v) => set("caseSensitive", v)} />

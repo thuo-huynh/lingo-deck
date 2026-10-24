@@ -29,6 +29,8 @@ export type DeckSettings = {
   learningSteps: string[];
   relearningSteps: string[];
   maximumInterval: number;
+  /** Presets saved before this field existed fall back to DEFAULT_LEECH_THRESHOLD. */
+  leechThreshold?: number;
 };
 
 export type DeckDoc = {
@@ -88,6 +90,8 @@ export type VocabDoc = {
   audioKey?: string;
   imageKey?: string;
   status: "active" | "suspended" | "archived";
+  /** Forgotten leechThreshold times or more. */
+  leech?: boolean;
   srs: SrsState;
   createdAt: Date;
   updatedAt: Date;

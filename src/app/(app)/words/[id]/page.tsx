@@ -38,6 +38,7 @@ export default async function EditWordPage(props: PageProps<"/words/[id]">) {
         <p className="mt-1 font-medium">
           {w.status === "suspended" ? "Đang tạm dừng" : STATE_LABEL[w.srs.state]}
           {w.srs.state !== "NEW" && <span className="text-body"> · ôn tiếp {due}</span>}
+          {w.leech && <span className="ml-2 rounded-full bg-hard-soft px-2 text-[13px] text-hard">Khó nhớ</span>}
         </p>
         <p className="text-[13px] text-muted-foreground tabular-nums">
           {w.srs.card.reps} lượt ôn · quên {w.srs.card.lapses} lần
