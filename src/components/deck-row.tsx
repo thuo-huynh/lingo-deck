@@ -24,6 +24,7 @@ export function DeckRow({
   return (
     <Link
       href={href}
+      transitionTypes={["nav-forward"]}
       className={cn("flex min-h-[72px] items-center gap-3 py-3.5 pr-3 active:bg-muted", !first && "border-t border-border")}
       style={{ paddingLeft: 16 + indent * 20 }}
     >

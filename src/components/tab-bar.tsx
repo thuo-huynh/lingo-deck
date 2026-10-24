@@ -23,13 +23,14 @@ export function TabBar() {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[max(28px,calc(env(safe-area-inset-bottom)+8px))]">
       <div className="mx-auto flex max-w-md items-end justify-between gap-3 px-5">
-        <nav aria-label="Điều hướng chính" className="pointer-events-auto flex h-16 items-center gap-2 rounded-full border border-border bg-popover p-1.5 shadow-nav">
+        <nav aria-label="Điều hướng chính" style={{ viewTransitionName: "tab-bar" }} className="pointer-events-auto flex h-16 items-center gap-2 rounded-full border border-border bg-popover p-1.5 shadow-nav">
           {TABS.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? path === "/" : path.startsWith(href);
             return (
               <Link
                 key={href}
                 href={href}
+                transitionTypes={["nav-tab"]}
                 aria-label={label}
                 aria-current={active ? "page" : undefined}
                 className={cn(

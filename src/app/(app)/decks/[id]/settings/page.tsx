@@ -17,7 +17,7 @@ export default async function DeckSettingsPage(props: PageProps<"/decks/[id]/set
   return (
     <main>
       <Button asChild variant="ghost" size="icon-lg" className="-ml-2 size-11">
-        <Link href={`/decks/${id}`} aria-label="Quay lại"><ChevronLeft className="size-6" strokeWidth={1.75} /></Link>
+        <Link href={`/decks/${id}`} transitionTypes={["nav-back"]} aria-label="Quay lại"><ChevronLeft className="size-6" strokeWidth={1.75} /></Link>
       </Button>
       <h1 className="mt-2 text-2xl font-semibold">Cài đặt học · {deck.name}</h1>
       <p className="mt-1 text-[13px] leading-[18px] text-muted-foreground">

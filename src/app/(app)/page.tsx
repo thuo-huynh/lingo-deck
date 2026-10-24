@@ -107,7 +107,7 @@ export default async function HomePage() {
         <>
           <div className="mt-8 flex items-center justify-between">
             <h2 className="text-base font-semibold">Bộ từ gần đây</h2>
-            <Link href="/decks" className="py-3 text-[13px] leading-[18px] font-semibold text-primary">Xem tất cả</Link>
+            <Link href="/decks" transitionTypes={["nav-tab"]} className="py-3 text-[13px] leading-[18px] font-semibold text-primary">Xem tất cả</Link>
           </div>
           <div className="mt-1 overflow-hidden rounded-card border border-border bg-card">
             {recent.map(({ deck, c }, i) => (

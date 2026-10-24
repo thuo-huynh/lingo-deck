@@ -63,7 +63,7 @@ export function CsvImport({ deckId, deckName, deckColor }: { deckId: string; dec
     <main className="flex min-h-[calc(100dvh-180px)] flex-col">
       <div className="flex items-center gap-2">
         <Button asChild variant="ghost" size="icon-lg" className="-ml-2 size-11">
-          <Link href={`/decks/${deckId}`} aria-label="Quay lại"><ChevronLeft className="size-6" strokeWidth={1.75} /></Link>
+          <Link href={`/decks/${deckId}`} transitionTypes={["nav-back"]} aria-label="Quay lại"><ChevronLeft className="size-6" strokeWidth={1.75} /></Link>
         </Button>
         <h1 className="text-2xl font-semibold">Nhập từ CSV</h1>
       </div>

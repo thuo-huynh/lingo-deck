@@ -29,7 +29,7 @@ export default async function DeckPage(props: PageProps<"/decks/[id]">) {
     <main>
       <div className="-mx-2 flex items-center justify-between">
         <Button asChild variant="ghost" size="icon-lg" className="size-11">
-          <Link href={deck.parentId ? `/decks/${deck.parentId.toHexString()}` : "/decks"} aria-label="Quay lại">
+          <Link href={deck.parentId ? `/decks/${deck.parentId.toHexString()}` : "/decks"} transitionTypes={["nav-back"]} aria-label="Quay lại">
             <ChevronLeft className="size-6" strokeWidth={1.75} />
           </Link>
         </Button>
@@ -64,7 +64,7 @@ export default async function DeckPage(props: PageProps<"/decks/[id]">) {
           <h2 className="mt-8 text-base font-semibold">Bộ con</h2>
           <div className="mt-2 overflow-hidden rounded-card border border-border bg-card">
             {subdecks.map((s, i) => (
-              <Link key={s._id.toHexString()} href={`/decks/${s._id.toHexString()}`} className={`flex min-h-[56px] items-center gap-3 px-4 active:bg-muted ${i ? "border-t border-border" : ""}`}>
+              <Link key={s._id.toHexString()} href={`/decks/${s._id.toHexString()}`} transitionTypes={["nav-forward"]} className={`flex min-h-[56px] items-center gap-3 px-4 active:bg-muted ${i ? "border-t border-border" : ""}`}>
                 <span className="size-2.5 rounded-full" style={{ background: s.color }} aria-hidden />
                 <span className="flex-1 truncate font-medium">{s.name}</span>
                 <span className="text-[13px] text-muted-foreground tabular-nums">{counts(s._id).total} từ</span>
@@ -77,7 +77,7 @@ export default async function DeckPage(props: PageProps<"/decks/[id]">) {
 
       <div className="mt-8 flex items-center justify-between">
         <h2 className="text-base font-semibold">Từ vựng</h2>
-        <Link href={`/words/new?deck=${id}`} className="flex items-center gap-1 py-3 text-[13px] leading-[18px] font-semibold text-primary">
+        <Link href={`/words/new?deck=${id}`} transitionTypes={["nav-forward"]} className="flex items-center gap-1 py-3 text-[13px] leading-[18px] font-semibold text-primary">
           <Plus className="size-4" strokeWidth={2} /> Thêm từ
         </Link>
       </div>
@@ -99,7 +99,7 @@ export default async function DeckPage(props: PageProps<"/decks/[id]">) {
       ) : (
         <div className="mt-3 overflow-hidden rounded-card border border-border bg-card">
           {words.map((w, i) => (
-            <Link key={w._id.toHexString()} href={`/words/${w._id.toHexString()}`} className={`flex min-h-[64px] items-center gap-3 px-4 py-3 active:bg-muted ${i ? "border-t border-border" : ""}`}>
+            <Link key={w._id.toHexString()} href={`/words/${w._id.toHexString()}`} transitionTypes={["nav-forward"]} className={`flex min-h-[64px] items-center gap-3 px-4 py-3 active:bg-muted ${i ? "border-t border-border" : ""}`}>
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate font-medium">{w.term}</span>
                 <span className="truncate text-[13px] leading-[18px] text-muted-foreground">{w.meaningVi}</span>

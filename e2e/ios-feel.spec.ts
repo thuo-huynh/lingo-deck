@@ -78,3 +78,18 @@ test("a button that calls the API locks with a spinner while waiting, then a ban
   expect(box!.y).toBeLessThan(140);
   await expect(save).toBeEnabled();
 });
+
+test.describe("with Reduce Motion on", () => {
+  test.use({ reducedMotion: "reduce" });
+
+  test("the flashcard still flips (as a crossfade)", async ({ page, signIn }) => {
+    await signIn();
+    await startTrialWord(page);
+    const card = page.getByRole("button", { name: /Thẻ ghi nhớ apple/ });
+    await card.click({ position: { x: 20, y: 200 } });
+    await expect(card).toHaveAttribute("aria-pressed", "true");
+    // No 3D rotation under reduced motion: the card element itself is not transformed.
+    expect(await card.evaluate((el) => getComputedStyle(el).transform)).toBe("none");
+    await expect(page.getByRole("group", { name: "Tự đánh giá" })).toBeVisible();
+  });
+});

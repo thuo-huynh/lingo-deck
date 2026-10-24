@@ -170,3 +170,28 @@
   .flip-inner[data-flipped="true"] .flip-front,
   .flip-inner[data-flipped="false"] .flip-back { opacity: 0; }
 }
+
+/* Touch feedback (spec #2): anything tappable shrinks a little while pressed. `scale` composes with transforms. */
+:where(button, a, [role="button"], summary, label:has(> input[type="checkbox"])):not(:disabled):not(.flip-inner) {
+  transition: scale 150ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+}
+:where(button, a, [role="button"], summary):not(:disabled):not(.flip-inner):active { scale: 0.97; }
+
+/* Page transitions (spec #2). Forward slides in from the right, back slides back, tabs crossfade. */
+::view-transition { pointer-events: none; }
+::view-transition-old(.nav-forward) { --slide-offset: -60px; animation: 150ms ease-in both vt-fade reverse, 250ms ease-in-out both vt-slide reverse; }
+::view-transition-new(.nav-forward) { --slide-offset: 60px; animation: 200ms ease-out 100ms both vt-fade, 250ms ease-in-out both vt-slide; }
+::view-transition-old(.nav-back) { --slide-offset: 60px; animation: 150ms ease-in both vt-fade reverse, 250ms ease-in-out both vt-slide reverse; }
+::view-transition-new(.nav-back) { --slide-offset: -60px; animation: 200ms ease-out 100ms both vt-fade, 250ms ease-in-out both vt-slide; }
+::view-transition-old(.nav-tab) { animation: 150ms ease-in both vt-fade reverse; }
+::view-transition-new(.nav-tab) { animation: 200ms ease-out both vt-fade; }
+/* The floating tab bar is the fixed anchor while content moves. */
+::view-transition-group(tab-bar) { animation: none; z-index: 100; }
+::view-transition-old(tab-bar) { display: none; }
+::view-transition-new(tab-bar) { animation: none; }
+@keyframes vt-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vt-slide { from { translate: var(--slide-offset); } to { translate: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
