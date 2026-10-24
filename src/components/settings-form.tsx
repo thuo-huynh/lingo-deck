@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import type { DeckSettings } from "@/lib/types";
 import type { StepType } from "@/features/study/attempt";
 import { STEP_LABELS } from "@/features/study/labels";
+import { DEFAULT_LEECH_THRESHOLD } from "@/features/decks/settings";
 
 const ALL: StepType[] = ["FLASHCARD", "MEANING_TO_WORD", "AUDIO_TO_WORD"];
 
@@ -111,7 +112,14 @@ export function SettingsForm({ initial, endpoint, footer }: { initial: DeckSetti
             </label>
             <label className="flex flex-col gap-1.5">
               <span className="text-[13px] leading-[18px] font-medium text-body">Đánh dấu “khó nhớ” sau số lần quên</span>
-              <input type="number" inputMode="numeric" min={2} max={99} className={inputClass} value={s.leechThreshold ?? 8} onChange={(e) => set("leechThreshold", Number(e.target.value) || 8)} />
+              <input type="number" inputMode="numeric" min={2} max={99} className={inputClass} value={s.leechThreshold ?? DEFAULT_LEECH_THRESHOLD} onChange={(e) => set("leechThreshold", Number(e.target.value) || DEFAULT_LEECH_THRESHOLD)} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-[13px] leading-[18px] font-medium text-body">Khi một từ bị đánh dấu khó nhớ</span>
+              <select className={inputClass} value={s.leechAction ?? "flag"} onChange={(e) => set("leechAction", e.target.value as "flag" | "suspend")}>
+                <option value="flag">Chỉ gắn nhãn “Khó nhớ”</option>
+                <option value="suspend">Gắn nhãn và tạm dừng từ</option>
+              </select>
             </label>
             <div className="flex min-h-11 items-center justify-between">
               <span>Phân biệt hoa/thường khi gõ</span>

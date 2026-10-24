@@ -43,6 +43,7 @@ export const settingsSchema = z.object({
   relearningSteps: z.array(stepUnit).max(10),
   maximumInterval: z.number().int().min(1).max(36500),
   leechThreshold: z.number().int().min(2).max(99).optional(),
+  leechAction: z.enum(["flag", "suspend"]).optional(),
 }) satisfies z.ZodType<DeckSettings>;
 
 /** Walks from the deck up to the root and returns the first explicit settings. */

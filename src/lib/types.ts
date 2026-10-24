@@ -31,6 +31,8 @@ export type DeckSettings = {
   maximumInterval: number;
   /** Presets saved before this field existed fall back to DEFAULT_LEECH_THRESHOLD. */
   leechThreshold?: number;
+  /** Spec 5.4: flag only (default) or also suspend. Never deletes. */
+  leechAction?: "flag" | "suspend";
 };
 
 export type DeckDoc = {

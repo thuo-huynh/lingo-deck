@@ -97,6 +97,7 @@ export function DeckMenu({ deckId, name, moveTargets }: { deckId: string; name: 
                 <option key={d.id} value={d.id}>Chuyển sang {d.label}</option>
               ))}
             </select>
+            {moveTo && <span className="text-[13px] leading-[18px] text-muted-foreground">Từ của mọi bộ con cũng được gộp vào bộ này, tiến độ học giữ nguyên.</span>}
           </label>
           <AlertDialogFooter>
             <AlertDialogCancel>Huỷ</AlertDialogCancel>

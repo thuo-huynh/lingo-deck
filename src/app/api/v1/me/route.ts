@@ -2,6 +2,7 @@ import { z } from "zod";
 import { handler } from "@/lib/api";
 import { requireApiUser } from "@/lib/auth";
 import { collections } from "@/lib/db";
+import { isValidTimeZone } from "@/lib/day";
 
 const input = z.object({
   displayName: z.string().trim().max(60).optional(),
@@ -9,14 +10,7 @@ const input = z.object({
   dayStartHour: z.number().int().min(0).max(23).optional(),
   timezone: z
     .string()
-    .refine((tz) => {
-      try {
-        new Intl.DateTimeFormat("en-US", { timeZone: tz });
-        return true;
-      } catch {
-        return false;
-      }
-    }, "Múi giờ không hợp lệ")
+    .refine(isValidTimeZone, "Múi giờ không hợp lệ")
     .optional(),
   onboarded: z.boolean().optional(),
 });

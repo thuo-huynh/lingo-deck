@@ -29,3 +29,12 @@ export function studyDay(now: Date, timeZone: string, dayStartHour: number) {
   const end = new Date(nextGuess - tzOffset(new Date(nextGuess), timeZone));
   return { key, start, end };
 }
+
+export function isValidTimeZone(tz: string) {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}

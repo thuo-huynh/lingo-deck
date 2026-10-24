@@ -3,6 +3,7 @@ import { createHmac, randomInt, timingSafeEqual } from "node:crypto";
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { collections } from "@/lib/db";
+import { isValidTimeZone } from "@/lib/day";
 import { AppError } from "@/lib/errors";
 import type { UserDoc } from "@/lib/types";
 
@@ -54,7 +55,7 @@ export async function verifyOtp(rawEmail: string, rawCode: string, timezone = "A
       $setOnInsert: {
         _id: new ObjectId(),
         email,
-        timezone: isTimeZone(timezone) ? timezone : "Asia/Ho_Chi_Minh",
+        timezone: isValidTimeZone(timezone) ? timezone : "Asia/Ho_Chi_Minh",
         dayStartHour: 4,
         dailyGoal: 10,
         onboarded: false,
@@ -64,15 +65,6 @@ export async function verifyOtp(rawEmail: string, rawCode: string, timezone = "A
     { upsert: true, returnDocument: "after" }
   );
   return user!;
-}
-
-function isTimeZone(tz: string) {
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone: tz });
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 async function sendCode(email: string, code: string) {

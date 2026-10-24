@@ -43,6 +43,11 @@ export default async function EditWordPage(props: PageProps<"/words/[id]">) {
         <p className="text-[13px] text-muted-foreground tabular-nums">
           {w.srs.card.reps} lượt ôn · quên {w.srs.card.lapses} lần
         </p>
+        {w.leech && (
+          <p className="mt-3 rounded-btn bg-hard-soft p-3 text-[13px] leading-[18px] text-hard">
+            Bạn đã quên từ này {w.srs.card.lapses} lần. Thử thêm câu ví dụ hoặc gợi ý riêng, rồi “Học lại từ đầu” để ghi nhớ lại từ gốc.
+          </p>
+        )}
         <WordActions id={id} deckId={w.deckId.toHexString()} suspended={w.status === "suspended"} />
       </section>
     </>

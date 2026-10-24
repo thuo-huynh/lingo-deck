@@ -9,7 +9,7 @@ import { getDeckSettings, getOwnedDeck } from "@/features/decks/service";
 import { DEFAULT_LEECH_THRESHOLD, stepsSchema } from "@/features/decks/settings";
 import { ALGORITHM, schedule } from "@/features/scheduling/fsrs";
 import { checkAnswer } from "./answer";
-import { evaluateAttempt, type AttemptEvaluation, type StepResult } from "./attempt";
+import { evaluateAttempt, STEP_TYPES, type AttemptEvaluation, type StepResult } from "./attempt";
 
 type Learner = { _id: ObjectId; timezone: string; dayStartHour: number };
 
@@ -45,26 +45,30 @@ export async function createSession(user: Learner, raw: z.input<typeof createSes
   const rescheduleMode = input.rescheduleMode ?? (schedules ? "scheduled" : "practice_only");
 
   let picked: { word: VocabDoc; isNew: boolean }[];
+  const [reviewsDone, introduced] = await Promise.all([
+    reviewLogs.countDocuments({
+      userId: user._id,
+      rescheduleMode: "scheduled",
+      reviewedAt: { $gte: day.start },
+      "previous.state": { $ne: "NEW" },
+    }),
+    vocab.countDocuments({ ownerId: user._id, "srs.introducedAt": { $gte: day.start } }),
+  ]);
+  // What today's quota still covers; "extra" study takes only what lies beyond it (spec 6.2).
+  const reviewQuota = Math.max(0, settings.maxReviewsPerDay - reviewsDone);
+  const newQuota = Math.max(0, settings.newPerDay - introduced);
+
   if (input.mode === "DAILY") {
-    const [reviewsDone, introduced] = await Promise.all([
-      reviewLogs.countDocuments({
-        userId: user._id,
-        rescheduleMode: "scheduled",
-        reviewedAt: { $gte: day.start },
-        "previous.state": { $ne: "NEW" },
-      }),
-      vocab.countDocuments({ ownerId: user._id, "srs.introducedAt": { $gte: day.start } }),
-    ]);
     const [due, fresh] = await Promise.all([
       vocab
         .find({ ...scope, ...dueFilter(now, day.end) })
         .sort({ "srs.due": 1 })
-        .limit(Math.max(0, settings.maxReviewsPerDay - reviewsDone))
+        .limit(reviewQuota)
         .toArray(),
       vocab
         .find({ ...scope, "srs.state": "NEW" })
         .sort({ createdAt: 1 })
-        .limit(Math.max(0, settings.newPerDay - introduced))
+        .limit(newQuota)
         .toArray(),
     ]);
     picked = order<{ word: VocabDoc; isNew: boolean }>(
@@ -80,17 +84,22 @@ export async function createSession(user: Learner, raw: z.input<typeof createSes
       filter._id = { $in: failed };
     }
     let sort: Record<string, 1 | -1> = { "srs.due": 1 };
+    let skip = 0;
     if (input.filter === "extra_new") {
       filter["srs.state"] = "NEW";
       sort = { createdAt: 1 };
+      skip = newQuota;
     }
-    if (input.filter === "extra_review") Object.assign(filter, dueFilter(now, day.end));
+    if (input.filter === "extra_review") {
+      Object.assign(filter, dueFilter(now, day.end));
+      skip = reviewQuota;
+    }
     if (input.filter === "weak") {
       filter["srs.state"] = { $ne: "NEW" };
       filter.$or = [{ "srs.card.lapses": { $gt: 0 } }, { leech: true }];
       sort = { "srs.card.lapses": -1, "srs.card.difficulty": -1 };
     }
-    const words = await vocab.find(filter).sort(sort).limit(input.limit ?? 20).toArray();
+    const words = await vocab.find(filter).sort(sort).skip(skip).limit(input.limit ?? 20).toArray();
     picked = words.map((word) => ({ word, isNew: word.srs.state === "NEW" }));
   }
   picked = picked.slice(0, input.limit ?? picked.length);
@@ -150,7 +159,7 @@ export async function getOwnedSession(userId: ObjectId, sessionId: string) {
 
 export const submitStepInput = z.object({
   itemIndex: z.number().int().min(0),
-  step: z.enum(["FLASHCARD", "MEANING_TO_WORD", "AUDIO_TO_WORD"]),
+  step: z.enum(STEP_TYPES),
   selfRating: z.enum(["again", "hard", "good", "easy"]).optional(),
   input: z.string().max(300).optional(),
   hintsUsed: z.number().int().min(0).max(10).optional(),
@@ -274,7 +283,8 @@ async function finalizeAttempt(
       if (next) {
         // Optimistic lock: a second tab reviewing the same word from the same revision loses.
         // Leech (spec 5.4): flag, never delete or auto-suspend.
-        const leech = next.card.lapses >= (session.settings.leechThreshold ?? DEFAULT_LEECH_THRESHOLD) ? { leech: true } : {};
+        const isLeech = next.card.lapses >= (session.settings.leechThreshold ?? DEFAULT_LEECH_THRESHOLD);
+        const leech = isLeech ? { leech: true, ...(session.settings.leechAction === "suspend" ? { status: "suspended" as const } : {}) } : {};
         const v = await vocab.updateOne({ _id: word._id, "srs.revision": word.srs.revision }, { $set: { srs: next, ...leech } }, { session: s });
         if (!v.modifiedCount) throw conflict("Từ này vừa được ôn ở nơi khác");
       }

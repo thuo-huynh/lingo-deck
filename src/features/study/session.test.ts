@@ -192,6 +192,19 @@ describe("leech detection (AC-16)", () => {
     expect(after!.status).toBe("active");
     expect(after!.srs.card.lapses).toBe(8);
   });
+
+  it("can suspend leeches instead of only flagging them, when the preset says so", async () => {
+    const { deck, w, id } = await oneWordSession({ steps: ["FLASHCARD"] });
+    await updateDeckSettings(user._id, deck._id.toHexString(), { ...DEFAULT_SETTINGS, leechThreshold: 2, leechAction: "suspend" });
+    const { vocab, sessions } = await collections();
+    await vocab.updateOne({ _id: w._id }, { $set: { "srs.state": "REVIEW", "srs.card.state": 2, "srs.card.lapses": 1, "srs.card.stability": 3, "srs.card.difficulty": 8, "srs.card.reps": 5, "srs.card.last_review": new Date(now.getTime() - 3 * 86_400_000), "srs.due": now } });
+    // The session snapshot was taken before the settings change; use a fresh one.
+    await sessions.deleteMany({});
+    const s2 = await createSession(user, { deckId: deck._id.toHexString(), steps: ["FLASHCARD"] }, now);
+    await submitStep(user, s2._id.toHexString(), { itemIndex: 0, step: "FLASHCARD", selfRating: "again" }, now);
+    expect(await vocab.findOne({ _id: w._id })).toMatchObject({ leech: true, status: "suspended" });
+    void id;
+  });
 });
 
 describe("custom study", () => {
@@ -220,13 +233,17 @@ describe("custom study", () => {
     expect(extra.rescheduleMode).toBe("scheduled");
   });
 
-  it("extra reviews: due reviews beyond the daily review limit, scheduled", async () => {
-    const { id } = await deckWith(3);
+  it("extra reviews: only the due reviews left beyond today's review limit, scheduled", async () => {
+    const { deck, id } = await deckWith(5);
+    await updateDeckSettings(user._id, id, { ...DEFAULT_SETTINGS, maxReviewsPerDay: 2 });
     const { vocab } = await collections();
-    await vocab.updateMany({}, { $set: { "srs.state": "REVIEW", "srs.due": now } });
+    await vocab.updateMany({ deckId: deck._id }, { $set: { "srs.state": "REVIEW", "srs.due": now } });
+    const daily = await createSession(user, { deckId: id }, now);
     const extra = await createSession(user, { deckId: id, mode: "CUSTOM", filter: "extra_review" }, now);
     expect(extra.items).toHaveLength(3);
     expect(extra.rescheduleMode).toBe("scheduled");
+    const dailyIds = new Set(daily.items.map((i) => i.vocabId.toHexString()));
+    expect(extra.items.some((i) => dailyIds.has(i.vocabId.toHexString()))).toBe(false);
   });
 
   it("weak words: most-forgotten first, practice only, never brand-new words", async () => {

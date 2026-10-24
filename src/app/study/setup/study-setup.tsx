@@ -56,6 +56,8 @@ export function StudySetup({ decks, initialDeckId, initialMode, tags }: { decks:
   const steps = stepCount ? ALL.slice(0, stepCount) : deck.steps;
 
   async function start() {
+    // Spec 6.2: studying beyond today's quota needs an explicit confirmation.
+    if ((scope === "extra_new" || scope === "extra_review") && !window.confirm("Học vượt hạn mức hôm nay? Kết quả vẫn cập nhật lịch ôn và có thể làm ngày mai nhiều từ cần ôn hơn.")) return;
     setBusy(true);
     setError(null);
     setEmpty(false);
