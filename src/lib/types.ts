@@ -44,6 +44,12 @@ export type DeckDoc = {
   name: string;
   description?: string;
   color: string;
+  /** Study language (BCP 47). Unset on decks made before #3; see deckLanguage. */
+  languageCode?: string;
+  /** Set while the owner shares this deck by link; null/unset = not shared. */
+  shareToken?: string | null;
+  /** On a deck copy's root: the shared deck it was copied from. */
+  copiedFromId?: ObjectId;
   sortOrder: number;
   /** null = inherit from parent (root falls back to defaults) */
   settings: DeckSettings | null;

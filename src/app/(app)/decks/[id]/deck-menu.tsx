@@ -2,16 +2,47 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ArrowDown, ArrowUp, Download, FileSpreadsheet, FolderPlus, MoreHorizontal, Pencil, SlidersHorizontal, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Download, Link2, Share2, FileSpreadsheet, FolderPlus, MoreHorizontal, Pencil, SlidersHorizontal, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { inputClass } from "@/components/field";
 import { BottomSheet, ConfirmSheet, SheetAction } from "@/components/bottom-sheet";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/client-api";
 
-export function DeckMenu({ deckId, name, moveTargets }: { deckId: string; name: string; moveTargets: { id: string; label: string }[] }) {
+export function DeckMenu({
+  deckId,
+  name,
+  shareToken,
+  moveTargets,
+}: {
+  deckId: string;
+  name: string;
+  shareToken: string | null;
+  moveTargets: { id: string; label: string }[];
+}) {
   const router = useRouter();
   const [menu, setMenu] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [token, setToken] = useState(shareToken);
+  const link = token && typeof window !== "undefined" ? `${window.location.origin}/share/${token}` : "";
+
+  async function toggleShare(enabled: boolean) {
+    try {
+      const r = await api<{ token: string | null }>(`/decks/${deckId}/share`, { method: "PUT", body: { enabled } });
+      setToken(r.token);
+      toast.success(enabled ? "Đã bật link chia sẻ" : "Đã tắt link, link cũ không còn dùng được");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không đổi được chia sẻ");
+    }
+  }
+
+  async function shareLink() {
+    // iOS share sheet when available; otherwise copy.
+    if (navigator.share) return navigator.share({ title: name, url: link }).catch(() => {});
+    await navigator.clipboard.writeText(link);
+    toast.success("Đã sao chép link");
+  }
   const [confirm, setConfirm] = useState(false);
   const [moveTo, setMoveTo] = useState("");
 
@@ -46,7 +77,16 @@ export function DeckMenu({ deckId, name, moveTargets }: { deckId: string; name: 
           <SheetAction href={`/decks/${deckId}/edit`} icon={<Pencil strokeWidth={1.75} />}>Đổi tên / chuyển</SheetAction>
           <SheetAction href={`/decks/new?parent=${deckId}`} icon={<FolderPlus strokeWidth={1.75} />}>Thêm bộ con</SheetAction>
           <SheetAction href={`/decks/${deckId}/settings`} icon={<SlidersHorizontal strokeWidth={1.75} />}>Cài đặt học</SheetAction>
-          <SheetAction href={`/decks/${deckId}/import`} icon={<FileSpreadsheet strokeWidth={1.75} />}>Nhập CSV</SheetAction>
+          <SheetAction
+            icon={<Share2 strokeWidth={1.75} />}
+            onClick={() => {
+              setMenu(false);
+              setSharing(true);
+            }}
+          >
+            Chia sẻ
+          </SheetAction>
+          <SheetAction href={`/decks/${deckId}/import`} icon={<FileSpreadsheet strokeWidth={1.75} />}>Nhập nhiều từ</SheetAction>
           <SheetAction href={`/api/v1/decks/${deckId}/export`} download icon={<Download strokeWidth={1.75} />}>Xuất CSV</SheetAction>
           <SheetAction onClick={() => reorder("up")} icon={<ArrowUp strokeWidth={1.75} />}>Lên trên</SheetAction>
           <SheetAction onClick={() => reorder("down")} icon={<ArrowDown strokeWidth={1.75} />}>Xuống dưới</SheetAction>
@@ -61,6 +101,27 @@ export function DeckMenu({ deckId, name, moveTargets }: { deckId: string; name: 
           >
             Xoá bộ từ
           </SheetAction>
+        </div>
+      </BottomSheet>
+      <BottomSheet
+        open={sharing}
+        onOpenChange={setSharing}
+        title={`Chia sẻ “${name}”`}
+        description="Ai có link và đã đăng nhập đều thêm được một bản sao vào thư viện của họ. Tiến độ học của bạn không được chia sẻ."
+      >
+        <div className="flex flex-col gap-3 px-2 pb-2">
+          <label className="flex min-h-14 items-center justify-between gap-3">
+            <span className="font-medium">Chia sẻ bằng link</span>
+            <Switch checked={!!token} onCheckedChange={toggleShare} />
+          </label>
+          {token && (
+            <>
+              <input readOnly value={link} aria-label="Link chia sẻ" className={inputClass} onFocus={(e) => e.currentTarget.select()} />
+              <Button size="xl" onClick={shareLink}>
+                <Link2 /> Gửi link
+              </Button>
+            </>
+          )}
         </div>
       </BottomSheet>
       <ConfirmSheet

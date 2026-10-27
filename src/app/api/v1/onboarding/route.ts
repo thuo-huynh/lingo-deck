@@ -25,7 +25,7 @@ export const POST = handler(async (req: Request) => {
   // Re-running onboarding must not create a second starter deck.
   let deckId = (await listDecks(user._id)).find((d) => !d.parentId)?._id.toHexString();
   if (!deckId) {
-    const root = await createDeck(user._id, { name: lang.native });
+    const root = await createDeck(user._id, { name: lang.native, languageCode: lang.code });
     deckId = root._id.toHexString();
     if (language === "en") {
       const daily = await createDeck(user._id, { name: "Daily Life", parentId: deckId });

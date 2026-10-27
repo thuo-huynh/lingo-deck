@@ -7,15 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Field, inputClass } from "@/components/field";
 import { api } from "@/lib/client-api";
 import { cn } from "@/lib/utils";
+import { LANGUAGES } from "@/features/decks/languages";
 
 const COLORS = ["#E0663F", "#EE9A4D", "#D3A13A", "#3FA36F", "#4A86E8", "#8B6CD9", "#D9649B", "#7B8494"];
 
-type Values = { name: string; description?: string; parentId: string; color?: string };
+type Values = { name: string; description?: string; parentId: string; color?: string; languageCode: string };
+
+const PRESET_CODES: string[] = Object.values(LANGUAGES).map((l) => l.code);
 
 export function DeckForm({ deckId, decks, initial }: { deckId?: string; decks: { id: string; name: string; depth: number }[]; initial: Values }) {
   const router = useRouter();
   const [v, setV] = useState<Values>(initial);
   const [busy, setBusy] = useState(false);
+  const [other, setOther] = useState(!PRESET_CODES.includes(initial.languageCode));
   const [error, setError] = useState<string | null>(null);
 
   async function save(e: React.FormEvent) {
@@ -23,7 +27,7 @@ export function DeckForm({ deckId, decks, initial }: { deckId?: string; decks: {
     setBusy(true);
     setError(null);
     try {
-      const body = { name: v.name, description: v.description, parentId: v.parentId || null, color: v.color };
+      const body = { name: v.name, description: v.description, parentId: v.parentId || null, color: v.color, languageCode: v.languageCode.trim() };
       const id = deckId
         ? (await api(`/decks/${deckId}`, { method: "PATCH", body }), deckId)
         : (await api<{ id: string }>("/decks", { body })).id;
@@ -46,6 +50,29 @@ export function DeckForm({ deckId, decks, initial }: { deckId?: string; decks: {
       <Field label="Tên bộ từ">
         <input required maxLength={80} autoFocus={!deckId} className={inputClass} value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} placeholder="Ví dụ: Daily Life" />
       </Field>
+      <Field label="Ngôn ngữ học">
+        <select
+          className={inputClass}
+          value={other ? "" : v.languageCode}
+          onChange={(e) => {
+            setOther(!e.target.value);
+            setV({ ...v, languageCode: e.target.value });
+          }}
+        >
+          {Object.values(LANGUAGES).map((l) => (
+            <option key={l.code} value={l.code}>{l.label} · {l.native}</option>
+          ))}
+          <option value="">Khác…</option>
+        </select>
+      </Field>
+      {other && (
+        <Field label="Mã ngôn ngữ (ví dụ vi, nl-NL)">
+          <input required pattern="[a-z]{2,3}(-[A-Z]{2})?" className={inputClass} value={v.languageCode} onChange={(e) => setV({ ...v, languageCode: e.target.value })} autoCapitalize="none" autoCorrect="off" />
+        </Field>
+      )}
+      {deckId && v.languageCode !== initial.languageCode && (
+        <p className="-mt-3 text-[13px] leading-[18px] text-muted-foreground">Các từ trong bộ này sẽ đổi sang ngôn ngữ mới.</p>
+      )}
       <Field label="Nằm trong">
         <select className={inputClass} value={v.parentId} onChange={(e) => setV({ ...v, parentId: e.target.value })}>
           <option value="">— Bộ từ gốc —</option>

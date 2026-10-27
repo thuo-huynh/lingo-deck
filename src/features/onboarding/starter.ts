@@ -14,10 +14,4 @@ export const STARTER_EN = [
   { term: "slowly", meaningVi: "chậm rãi", partOfSpeech: "adverb", phonetic: "/ˈsləʊ.li/", example: ["Please speak slowly.", "Làm ơn nói chậm thôi."], tags: ["A1"] },
 ];
 
-export const LANGUAGES = {
-  en: { label: "Tiếng Anh", native: "English", code: "en-US" },
-  ja: { label: "Tiếng Nhật", native: "日本語", code: "ja-JP" },
-  ko: { label: "Tiếng Hàn", native: "한국어", code: "ko-KR" },
-  zh: { label: "Tiếng Trung", native: "中文", code: "zh-CN" },
-  fr: { label: "Tiếng Pháp", native: "Français", code: "fr-FR" },
-} as const;
+export { LANGUAGES } from "@/features/decks/languages";

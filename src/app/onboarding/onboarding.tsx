@@ -11,8 +11,8 @@ import { LANGUAGES } from "@/features/onboarding/starter";
 const STEPS = [
   {
     key: "language",
-    title: "Bạn muốn học ngôn ngữ nào?",
-    subtitle: "Giao diện vẫn bằng tiếng Việt.",
+    title: "Bắt đầu với ngôn ngữ nào?",
+    subtitle: "Bạn có thể học thêm ngôn ngữ khác sau: mỗi bộ từ một ngôn ngữ.",
     options: Object.entries(LANGUAGES).map(([id, l]) => ({ id, label: l.label, hint: l.native })),
   },
   {

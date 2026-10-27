@@ -8,6 +8,7 @@ import { markAnswer } from "@/features/study/diff";
 import type { StepOutcome } from "@/features/study/session";
 import type { Current, Submit } from "./player";
 import { useAudio } from "./use-audio";
+import { languageName } from "@/features/decks/languages";
 
 type TypingCard = {
   meaningVi?: string;
@@ -17,9 +18,8 @@ type TypingCard = {
   audioUrl?: string;
   speech?: string;
   languageCode: string;
+  blanks: string;
 };
-
-const LANG_NAME: Record<string, string> = { en: "tiếng Anh", ja: "tiếng Nhật", ko: "tiếng Hàn", zh: "tiếng Trung", fr: "tiếng Pháp" };
 
 export function TypingStep({
   current,
@@ -43,7 +43,7 @@ export function TypingStep({
   const input = useRef<HTMLInputElement>(null);
   const cont = useRef<HTMLButtonElement>(null);
   const audio = useAudio({ ...card, speech: card.speech }, listening && autoplay);
-  const lang = LANG_NAME[card.languageCode.split("-")[0]] ?? "ngôn ngữ đang học";
+  const lang = languageName(card.languageCode) ?? "ngôn ngữ đang học";
 
   useEffect(() => {
     if (outcome) cont.current?.focus();
@@ -118,6 +118,22 @@ export function TypingStep({
             else if (value.trim()) send({});
           }}
         >
+          {!outcome && card.blanks && (
+            // One slot per letter, filled as you type (#3); the input below stays the real control.
+            <p className="mb-4 flex flex-wrap justify-center gap-x-1.5 gap-y-2 text-2xl font-semibold" lang={card.languageCode} aria-label={`Từ có ${[...card.blanks].filter((c) => c === "_").length} chữ cái`}>
+              {[...card.blanks].map((c, i) =>
+                c === "_" ? (
+                  <span key={i} aria-hidden className="grid h-9 w-6 place-items-end justify-center border-b-2 border-border-strong pb-0.5">
+                    {[...value][i] ?? ""}
+                  </span>
+                ) : (
+                  <span key={i} aria-hidden className={cn("grid h-9 place-items-end pb-0.5 text-muted-foreground", c === " " ? "w-3" : "w-auto")}>
+                    {c === " " ? "" : c}
+                  </span>
+                )
+              )}
+            </p>
+          )}
           <label className="flex flex-col gap-1.5">
             <span className="text-[13px] leading-[18px] font-medium text-body">Câu trả lời của bạn</span>
             <span className="relative block">

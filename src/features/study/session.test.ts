@@ -5,7 +5,7 @@ import { collections } from "@/lib/db";
 import { createDeck } from "@/features/decks/service";
 import { createVocab } from "@/features/vocab/service";
 import { createSession, finishSession, resumableSession, submitStep } from "./session";
-import { updateDeckSettings } from "@/features/decks/service";
+import { archiveDeck, updateDeckSettings } from "@/features/decks/service";
 import { DEFAULT_SETTINGS } from "@/features/decks/settings";
 
 setupTestMongo();
@@ -171,6 +171,23 @@ describe("resumableSession", () => {
     expect(r).toMatchObject({ id, totalWords: 1, completedWords: 0 });
 
     await finishSession(user._id, id, now);
+    expect(await resumableSession(user._id)).toBeNull();
+  });
+
+  it("starting a new session closes the older open one, so a word cannot be reviewed twice", async () => {
+    const { id } = await oneWordSession();
+    const deck = await createDeck(user._id, { name: "Other" }, now);
+    await word(deck._id, "dog");
+    await createSession(user, { deckId: deck._id.toHexString() }, now);
+    const { sessions } = await collections();
+    expect((await sessions.findOne({ _id: new ObjectId(id) }))!.status).toBe("finished");
+  });
+
+  it("is gone once the session's deck is deleted", async () => {
+    const { id } = await oneWordSession();
+    const { sessions } = await collections();
+    const s = await sessions.findOne({ _id: new ObjectId(id) });
+    await archiveDeck(user._id, s!.deckId.toHexString(), null, now);
     expect(await resumableSession(user._id)).toBeNull();
   });
 

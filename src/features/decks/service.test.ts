@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { setupTestMongo } from "@/test/mongo";
 import { collections } from "@/lib/db";
 import { createVocab } from "@/features/vocab/service";
-import { archiveDeck, createDeck, listDecks, moveDeck } from "./service";
+import { archiveDeck, createDeck, deckLanguage, listDecks, moveDeck, updateDeck } from "./service";
 
 setupTestMongo();
 
@@ -50,5 +50,27 @@ describe("moveDeck", () => {
     await moveDeck(owner, b._id.toHexString(), "up"); // already first: no-op
     await moveDeck(owner, b._id.toHexString(), "down");
     expect((await listDecks(owner)).map((d) => d.name)).toEqual(["A", "B", "C"]);
+  });
+});
+
+describe("study language (#3)", () => {
+  it("new words take the deck's language, sub-decks inherit it, and changing it updates the deck's words", async () => {
+    const ja = await createDeck(owner, { name: "日本語", languageCode: "ja-JP" });
+    const sub = await createDeck(owner, { name: "N5", parentId: ja._id.toHexString() });
+    expect(sub.languageCode).toBe("ja-JP");
+    const w = await createVocab(owner, { deckId: sub._id.toHexString(), term: "ねこ", meaningVi: "mèo", languageCode: "en-US" });
+    expect(w.languageCode).toBe("ja-JP");
+
+    await updateDeck(owner, sub._id.toHexString(), { languageCode: "ko-KR" });
+    const { vocab } = await collections();
+    expect((await vocab.findOne({ _id: w._id }))!.languageCode).toBe("ko-KR");
+  });
+
+  it("an older deck without a language uses its latest word's", async () => {
+    const d = await createDeck(owner, { name: "Old" });
+    const { decks, vocab } = await collections();
+    await createVocab(owner, { deckId: d._id.toHexString(), term: "chat", meaningVi: "mèo" });
+    await vocab.updateMany({ deckId: d._id }, { $set: { languageCode: "fr-FR" } });
+    expect(await deckLanguage((await decks.findOne({ _id: d._id }))!)).toBe("fr-FR");
   });
 });

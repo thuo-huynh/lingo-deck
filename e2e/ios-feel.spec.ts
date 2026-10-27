@@ -38,7 +38,7 @@ test("the + button opens a bottom sheet with three actions that Esc closes", asy
   await page.getByRole("button", { name: "Thêm từ, bộ từ hoặc nhập CSV" }).click();
   const sheet = page.getByRole("dialog", { name: "Thêm mới" });
   await expect(sheet).toBeVisible();
-  await expect(sheet.getByRole("link")).toHaveText(["Thêm từ", "Tạo bộ từ", "Nhập CSV"]);
+  await expect(sheet.getByRole("link")).toHaveText(["Thêm từ", "Tạo bộ từ", "Nhập nhiều từ"]);
   await page.keyboard.press("Escape");
   await expect(sheet).toBeHidden();
 

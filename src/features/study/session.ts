@@ -119,7 +119,11 @@ export async function createSession(user: Learner, raw: z.input<typeof createSes
     startedAt: now,
     finishedAt: null,
   };
-  if (session.items.length) await sessions.insertOne(session);
+  if (session.items.length) {
+    // One open session at a time: an abandoned one could otherwise review the same words again.
+    await sessions.updateMany({ userId: user._id, status: "active" }, { $set: { status: "finished", finishedAt: now } });
+    await sessions.insertOne(session);
+  }
   return session;
 }
 

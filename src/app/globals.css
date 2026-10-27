@@ -141,6 +141,8 @@
     -webkit-tap-highlight-color: transparent;
     font-variant-numeric: tabular-nums;
   }
+  /* While a bottom sheet is open the page behind stays put (#3). */
+  html:has([data-vaul-drawer][data-state="open"]) { overflow: hidden; overscroll-behavior: none; }
   /* iOS zooms into inputs under 16px */
   input, textarea, select { font-size: 16px; }
   @media (prefers-reduced-motion: reduce) {

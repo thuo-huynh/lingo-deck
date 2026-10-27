@@ -36,6 +36,7 @@ export default async function DeckPage(props: PageProps<"/decks/[id]">) {
         <DeckMenu
           deckId={id}
           name={deck.name}
+          shareToken={deck.shareToken ?? null}
           moveTargets={decks
             .filter((d) => !d.path.some((p) => p.equals(deck._id)))
             .map((d) => ({ id: d._id.toHexString(), label: d.path.map((p) => byId.get(p.toHexString())?.name).join(" › ") }))}

@@ -20,7 +20,6 @@ export function buildHints(word: Pick<VocabDoc, "term" | "hints" | "examples" | 
   for (const h of word.hints.filter((h) => h.type === "custom")) out.push({ label: "Gợi ý", value: h.value });
   if (chars.length > 1) {
     out.push({ label: "Chữ cái đầu", value: chars[0] });
-    out.push({ label: "Số ký tự", value: `${chars.filter((c) => c !== " ").length} chữ cái` });
   }
   if (chars.length > 3) {
     out.push({ label: "Điền khuyết", value: chars.map((c, i) => (c === " " ? " " : i === 0 || i === chars.length - 1 ? c : "_")).join(" ") });
@@ -28,6 +27,11 @@ export function buildHints(word: Pick<VocabDoc, "term" | "hints" | "examples" | 
   const ex = word.examples.find((e) => e.text.toLowerCase().includes(word.term.toLowerCase()));
   if (ex) out.push({ label: "Ví dụ", value: mask(ex.text, word.term) + (ex.translationVi ? ` — ${ex.translationVi}` : "") });
   return out;
+}
+
+/** One "_" per letter; spaces and punctuation stay visible (#3: "big" → "___"). */
+export function toBlanks(term: string) {
+  return [...term.normalize("NFC")].map((c) => (/[\p{L}\p{N}\p{M}]/u.test(c) ? "_" : c)).join("");
 }
 
 export function formatInterval(ms: number) {
@@ -73,9 +77,10 @@ export function cardFor(step: StepType, word: VocabDoc, session: SessionDoc, now
     };
   }
   const hints = session.settings.allowHints ? buildHints(word) : [];
-  if (step === "MEANING_TO_WORD") return { ...base, meaningVi: word.meaningVi, tags: word.tags, hints };
+  const blanks = toBlanks(word.term);
+  if (step === "MEANING_TO_WORD") return { ...base, meaningVi: word.meaningVi, tags: word.tags, hints, blanks };
   // Browser TTS needs the text on the device; it is never rendered before the answer (spec 4.2.C).
-  return { ...base, audioUrl: mediaUrl(word.audioKey), speech: word.term, hints: hints.filter((h) => h.label !== "Ví dụ") };
+  return { ...base, audioUrl: mediaUrl(word.audioKey), speech: word.term, hints: hints.filter((h) => h.label !== "Ví dụ"), blanks };
 }
 
 export async function sessionView(session: SessionDoc, userId: ObjectId) {

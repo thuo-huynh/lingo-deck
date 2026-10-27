@@ -5,6 +5,7 @@ import { collections, getClient } from "@/lib/db";
 import { badRequest, notFound, parseId } from "@/lib/errors";
 import type { DeckDoc, DeckSettings } from "@/lib/types";
 import { resolveSettings, settingsSchema } from "./settings";
+import { LANGUAGE_CODE } from "./languages";
 
 export const DECK_COLORS = ["#E0663F", "#EE9A4D", "#D3A13A", "#3FA36F", "#4A86E8", "#8B6CD9", "#D9649B", "#7B8494"];
 
@@ -13,6 +14,7 @@ export const deckInput = z.object({
   description: z.string().trim().max(500).optional(),
   parentId: z.string().nullish(),
   color: z.enum(DECK_COLORS).optional(),
+  languageCode: z.string().regex(LANGUAGE_CODE, "Mã ngôn ngữ không hợp lệ").optional(),
 });
 
 export async function getOwnedDeck(ownerId: ObjectId, deckId: string) {
@@ -39,6 +41,7 @@ export async function createDeck(ownerId: ObjectId, raw: z.input<typeof deckInpu
     name: input.name,
     description: input.description,
     color: input.color ?? DECK_COLORS[total % DECK_COLORS.length],
+    languageCode: input.languageCode ?? parent?.languageCode,
     sortOrder: count,
     settings: null,
     archivedAt: null,
@@ -56,6 +59,11 @@ export async function updateDeck(ownerId: ObjectId, deckId: string, raw: Partial
   if (input.name !== undefined) $set.name = input.name;
   if (input.description !== undefined) $set.description = input.description;
   if (input.color !== undefined) $set.color = input.color;
+  // Pronunciation must match the deck, so its words follow a language change.
+  if (input.languageCode !== undefined && input.languageCode !== deck.languageCode) {
+    $set.languageCode = input.languageCode;
+    await vocab.updateMany({ ownerId, deckId: deck._id }, { $set: { languageCode: input.languageCode } });
+  }
 
   if (input.parentId !== undefined && String(input.parentId ?? "") !== String(deck.parentId ?? "")) {
     const parent = input.parentId ? await getOwnedDeck(ownerId, input.parentId) : null;
@@ -81,13 +89,26 @@ export async function updateDeck(ownerId: ObjectId, deckId: string, raw: Partial
   if (Object.keys($set).length) await decks.updateOne({ _id: deck._id }, { $set });
 }
 
+/** The deck's study language; older decks fall back to their latest word's, then English. */
+export async function deckLanguage(deck: DeckDoc) {
+  if (deck.languageCode) return deck.languageCode;
+  const { vocab } = await collections();
+  const sort = { sort: { createdAt: -1 as const }, projection: { languageCode: 1 } };
+  const last =
+    (await vocab.findOne({ ownerId: deck.ownerId, deckId: deck._id }, sort)) ??
+    (await vocab.findOne({ ownerId: deck.ownerId, deckPath: deck.path[0] }, sort));
+  return last?.languageCode ?? "en-US";
+}
+
 /** Soft delete: archives the deck and its subdecks. Words and their review history stay in the database. */
 export async function archiveDeck(ownerId: ObjectId, deckId: string, moveWordsTo?: string | null, now = new Date()) {
   const deck = await getOwnedDeck(ownerId, deckId);
   const target = moveWordsTo ? await getOwnedDeck(ownerId, moveWordsTo) : null;
   if (target?.path.some((id) => id.equals(deck._id))) throw badRequest("Không thể chuyển từ vào bộ đang xoá");
-  const { decks, vocab } = await collections();
+  const { decks, vocab, sessions } = await collections();
   const client = await getClient();
+  const subtree = await decks.distinct("_id", { ownerId, path: deck._id });
+  const archivedWords = target ? [] : await vocab.distinct("_id", { ownerId, deckPath: deck._id });
   // Spec 10.2: deleting a deck either moves its words (keeping SRS history) or archives them; never hard-deletes.
   await client.withSession((s) =>
     s.withTransaction(async () => {
@@ -105,6 +126,18 @@ export async function archiveDeck(ownerId: ObjectId, deckId: string, moveWordsTo
         );
       }
       await decks.updateMany({ ownerId, path: deck._id }, { $set: { archivedAt: now } }, { session: s });
+      // Open sessions must not resume on a deleted deck or its words (#3).
+      await sessions.updateMany(
+        { userId: ownerId, status: "active", deckId: { $in: subtree } },
+        { $set: { status: "finished", finishedAt: now } },
+        { session: s }
+      );
+      if (archivedWords.length)
+        await sessions.updateMany(
+          { userId: ownerId, status: "active" },
+          { $set: { "items.$[i].status": "skipped" } },
+          { session: s, arrayFilters: [{ "i.status": "pending", "i.vocabId": { $in: archivedWords } }] }
+        );
     })
   );
 }

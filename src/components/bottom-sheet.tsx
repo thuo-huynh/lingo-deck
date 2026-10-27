@@ -26,7 +26,8 @@ export function BottomSheet({
   className?: string;
 }) {
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    // Drag-to-close only from the handle, so scrolling inside the sheet never moves it (#3).
+    <Drawer open={open} onOpenChange={onOpenChange} handleOnly>
       <DrawerContent
         // No description element when there is none, rather than one that repeats the title.
         {...(description ? {} : { "aria-describedby": undefined })}
@@ -39,7 +40,7 @@ export function BottomSheet({
           <DrawerTitle className="text-lg font-semibold">{title}</DrawerTitle>
           {description && <DrawerDescription className="mt-1 text-[15px] leading-6 text-body">{description}</DrawerDescription>}
         </div>
-        {children}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
       </DrawerContent>
     </Drawer>
   );

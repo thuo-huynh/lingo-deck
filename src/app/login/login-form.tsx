@@ -13,7 +13,18 @@ const ERRORS: Record<string, string> = {
   google_off: "Đăng nhập Google chưa được bật.",
 };
 
-export function LoginForm({ emailEnabled, googleEnabled, initialError }: { emailEnabled: boolean; googleEnabled: boolean; initialError?: string }) {
+export function LoginForm({
+  emailEnabled,
+  googleEnabled,
+  initialError,
+  next,
+}: {
+  emailEnabled: boolean;
+  googleEnabled: boolean;
+  initialError?: string;
+  /** A share link to return to after signing in (already checked by safeNext). */
+  next?: string | null;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -44,12 +55,13 @@ export function LoginForm({ emailEnabled, googleEnabled, initialError }: { email
       const { onboarded } = await api<{ onboarded: boolean }>("/auth/verify-otp", {
         body: { email, code: value, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone },
       });
-      router.replace(onboarded ? "/" : "/onboarding");
+      router.replace(next ?? (onboarded ? "/" : "/onboarding"));
       router.refresh();
     });
 
   // The browser's time zone rides along so a new account starts with the right study day.
-  const googleHref = () => `/api/v1/auth/google?tz=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone)}`;
+  const googleHref = () =>
+    `/api/v1/auth/google?tz=${encodeURIComponent(Intl.DateTimeFormat().resolvedOptions().timeZone)}${next ? `&next=${encodeURIComponent(next)}` : ""}`;
 
   return (
     <>

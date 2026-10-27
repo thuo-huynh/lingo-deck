@@ -36,6 +36,22 @@ export function toCsv(rows: string[][]) {
   return rows.map((r) => r.map(cell).join(",")).join("\r\n") + "\r\n";
 }
 
+/**
+ * A pasted list, one "term - meaning" per line, as import CSV (#3).
+ * Tab wins, then a spaced dash, then ":" or a bare "-", so hyphenated terms like "well-known - nổi tiếng" survive.
+ */
+export function listToCsv(text: string) {
+  const rows = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const m = l.match(/^(.*?)\t(.*)$/) ?? l.match(/^(.*?)\s+[-–—]\s+(.*)$/) ?? l.match(/^(.*?)\s*[:=]\s*(.*)$/) ?? l.match(/^(.*?)-(.*)$/);
+      return m ? [m[1].trim(), m[2].trim()] : [l, ""];
+    });
+  return toCsv([["term", "meaning_vi"], ...rows]);
+}
+
 export const CSV_COLUMNS = ["term", "meaning_vi", "example", "example_vi", "phonetic", "part_of_speech", "tags", "accepted"] as const;
 
 export type ImportRow = {

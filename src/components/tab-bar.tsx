@@ -61,7 +61,7 @@ export function TabBar() {
             </SheetAction>
             {/* Import needs a target deck; from elsewhere the library is where you pick one. */}
             <SheetAction href={deckId ? `/decks/${deckId}/import` : "/decks"} icon={<FileSpreadsheet strokeWidth={1.75} />}>
-              Nhập CSV
+              Nhập nhiều từ
             </SheetAction>
           </div>
         </BottomSheet>

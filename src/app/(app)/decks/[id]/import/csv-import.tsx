@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/client-api";
 import { cn } from "@/lib/utils";
-import type { ImportRow } from "@/features/vocab/csv";
+import { listToCsv, type ImportRow } from "@/features/vocab/csv";
 
 const SAMPLE =
   "term,meaning_vi,example,example_vi,phonetic,tags\r\napple,quả táo,I eat an apple every morning.,Tôi ăn một quả táo mỗi sáng.,/ˈæp.əl/,food;A1\r\n";
@@ -23,7 +23,9 @@ export function CsvImport({ deckId, deckName, deckColor }: { deckId: string; dec
   const dup = rows?.filter((r) => r.status === "duplicate").length ?? 0;
   const bad = rows?.filter((r) => r.status === "error").length ?? 0;
 
-  async function pick(f: File) {
+  const [pasted, setPasted] = useState("");
+
+  async function pick(f: File | { name: string; text: () => Promise<string> }) {
     setBusy(true);
     setError(null);
     try {
@@ -65,7 +67,7 @@ export function CsvImport({ deckId, deckName, deckColor }: { deckId: string; dec
         <Button asChild variant="ghost" size="icon-lg" className="-ml-2 size-11">
           <Link href={`/decks/${deckId}`} transitionTypes={["nav-back"]} aria-label="Quay lại"><ChevronLeft className="size-6" strokeWidth={1.75} /></Link>
         </Button>
-        <h1 className="text-2xl font-semibold">Nhập từ CSV</h1>
+        <h1 className="text-2xl font-semibold">Nhập nhiều từ</h1>
       </div>
       <div className="mt-4 flex items-center justify-between rounded-btn border border-border bg-card px-4 py-3">
         <span className="text-[13px] font-medium text-body">Nhập vào</span>
@@ -93,6 +95,25 @@ export function CsvImport({ deckId, deckName, deckColor }: { deckId: string; dec
           >
             Tải file mẫu
           </a>
+          <label className="mt-2 flex flex-col gap-1.5">
+            <span className="text-[13px] leading-[18px] font-medium text-body">Hoặc dán danh sách, mỗi dòng một từ</span>
+            <textarea
+              value={pasted}
+              onChange={(e) => setPasted(e.target.value)}
+              rows={5}
+              placeholder={"big - to\ncat - con mèo"}
+              className="rounded-field border border-border-strong bg-card px-4 py-3 outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20"
+            />
+          </label>
+          <Button
+            variant="outline"
+            size="xl"
+            className="mt-2"
+            disabled={busy || !pasted.trim()}
+            onClick={() => pick({ name: "Danh sách đã dán", text: async () => listToCsv(pasted) })}
+          >
+            Xem trước danh sách
+          </Button>
           <p role="alert" className="min-h-[18px] text-center text-[13px] text-destructive">{error}</p>
           <div className="flex-1" />
           {filePicker(

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { LoginForm } from "./login-form";
+import { safeNext } from "@/features/share/path";
 
 export const metadata: Metadata = { title: "Đăng nhập · LingoDeck" };
 
 export default async function LoginPage(props: PageProps<"/login">) {
-  const { error } = await props.searchParams;
+  const { error, next } = await props.searchParams;
   // Email codes need a mail key in production; without one, Google is the only way in.
   const emailEnabled = !!process.env.RESEND_API_KEY || process.env.NODE_ENV !== "production";
   const googleEnabled = !!process.env.GOOGLE_CLIENT_ID && !!process.env.GOOGLE_CLIENT_SECRET;
@@ -15,7 +16,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
       </p>
       <h1 className="mt-8 text-2xl font-semibold">Học từ vựng mỗi ngày</h1>
       <p className="mt-2 text-base text-body">Ôn đúng lúc sắp quên, nhớ lâu hơn.</p>
-      <LoginForm emailEnabled={emailEnabled} googleEnabled={googleEnabled} initialError={typeof error === "string" ? error : undefined} />
+      <LoginForm emailEnabled={emailEnabled} googleEnabled={googleEnabled} initialError={typeof error === "string" ? error : undefined} next={safeNext(next)} />
     </main>
   );
 }

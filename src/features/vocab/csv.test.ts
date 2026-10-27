@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseCsv, previewImport, toCsv } from "./csv";
+import { listToCsv, parseCsv, previewImport, toCsv } from "./csv";
 
 describe("parseCsv", () => {
   it("reads quoted fields with commas, quotes and newlines, and strips a BOM", () => {
@@ -48,5 +48,18 @@ describe("toCsv", () => {
   it("round-trips through parseCsv", () => {
     const rows = [["term", "meaning_vi"], ['say "hi"', "chào, bạn"]];
     expect(parseCsv(toCsv(rows))).toEqual(rows);
+  });
+});
+
+describe("listToCsv", () => {
+  it("turns pasted term - meaning lines into import rows", () => {
+    const rows = previewImport(listToCsv("big - to\r\nwell-known - nổi tiếng\ncat: con mèo\n\ndog\tcon chó\nlonely"), []);
+    expect(rows.map((r) => [r.term, r.meaningVi, r.status])).toEqual([
+      ["big", "to", "ok"],
+      ["well-known", "nổi tiếng", "ok"],
+      ["cat", "con mèo", "ok"],
+      ["dog", "con chó", "ok"],
+      ["lonely", "", "error"],
+    ]);
   });
 });

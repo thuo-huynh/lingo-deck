@@ -5,7 +5,7 @@ import { collections } from "@/lib/db";
 import { badRequest, notFound, parseId } from "@/lib/errors";
 import type { DeckDoc, VocabDoc } from "@/lib/types";
 import { CSV_COLUMNS, previewImport, toCsv } from "./csv";
-import { getOwnedDeck } from "@/features/decks/service";
+import { deckLanguage, getOwnedDeck } from "@/features/decks/service";
 import { newSrs } from "@/features/scheduling/fsrs";
 
 const text = (max: number) => z.string().trim().max(max);
@@ -35,7 +35,7 @@ export async function createVocab(ownerId: ObjectId, raw: z.input<typeof vocabIn
   const input = vocabInput.parse(raw);
   const deck = await getOwnedDeck(ownerId, input.deckId);
   const { vocab } = await collections();
-  const doc = buildVocab(ownerId, deck, input, now);
+  const doc = buildVocab(ownerId, deck, { ...input, languageCode: await deckLanguage(deck) }, now);
   await vocab.insertOne(doc);
   return doc;
 }
@@ -83,12 +83,11 @@ export async function importCsv(ownerId: ObjectId, deckId: string, csv: string, 
   if (rows.length > MAX_IMPORT_ROWS) throw badRequest(`Tối đa ${MAX_IMPORT_ROWS} dòng mỗi lần nhập`);
   if (!commit) return { rows, imported: 0 };
   // Every row goes through the same validation as the editor; a row that fails is reported, not inserted.
-  // Imported words take the language already used in this deck tree.
-  const last = await vocab.findOne({ ownerId, deckPath: deck.path[0] }, { sort: { createdAt: -1 }, projection: { languageCode: 1 } });
+  const languageCode = await deckLanguage(deck);
   const docs: VocabDoc[] = [];
   for (const r of rows) {
     if (r.status !== "ok" || !r.input) continue;
-    const parsed = vocabInput.safeParse({ ...r.input, deckId, languageCode: last?.languageCode ?? "en-US" });
+    const parsed = vocabInput.safeParse({ ...r.input, deckId, languageCode });
     if (parsed.success) docs.push(buildVocab(ownerId, deck, parsed.data, now));
     else Object.assign(r, { status: "error", note: parsed.error.issues[0]?.message });
   }
@@ -137,7 +136,7 @@ export async function updateVocab(ownerId: ObjectId, id: string, raw: z.input<ty
       $set: {
         deckId: deck._id,
         deckPath: deck.path,
-        languageCode: input.languageCode,
+        languageCode: await deckLanguage(deck),
         term: input.term,
         meaningVi: input.meaningVi,
         acceptedAnswers: answers(input.term, input.acceptedAnswers),

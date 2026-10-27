@@ -8,5 +8,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|about|privacy|api|_next/static|_next/image|offline.html|sw.js|manifest.webmanifest|icon|apple-icon|.*\\.png$).*)"],
+  matcher: ["/((?!login|about|privacy|share|api|_next/static|_next/image|offline.html|sw.js|manifest.webmanifest|icon|apple-icon|.*\\.png$).*)"],
 };

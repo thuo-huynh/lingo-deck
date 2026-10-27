@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { safeNext } from "@/features/share/path";
 import { unsealData } from "iron-session";
 import { exchangeCode, OAUTH_COOKIE, verifiedEmailFromIdToken } from "@/features/auth/google";
 import { findOrCreateUser } from "@/features/auth/users";
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state") ?? "";
   if (!code || !sealed) return fail(url.searchParams.get("error") === "access_denied" ? "google_cancel" : "google");
-  const pending = await unsealData<{ verifier?: string; state?: string; timezone?: string }>(sealed, { password: process.env.SESSION_PASSWORD!, ttl: 600 });
+  const pending = await unsealData<{ verifier?: string; state?: string; timezone?: string; next?: string }>(sealed, { password: process.env.SESSION_PASSWORD!, ttl: 600 });
   // State must round-trip unchanged, or this callback was not started by this browser (CSRF).
   if (!pending.verifier || !pending.state || !same(pending.state, state)) return fail("google");
 
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
     const session = await getCookieSession();
     session.userId = user._id.toHexString();
     await session.save();
-    return NextResponse.redirect(new URL(user.onboarded ? "/" : "/onboarding", url.origin));
+    return NextResponse.redirect(new URL(safeNext(pending.next) ?? (user.onboarded ? "/" : "/onboarding"), url.origin));
   } catch (e) {
     console.error("Google sign-in failed", e instanceof Error ? e.message : e);
     return fail("google");

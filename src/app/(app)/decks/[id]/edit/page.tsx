@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/auth";
-import { getOwnedDeck, listDecks } from "@/features/decks/service";
+import { deckLanguage, getOwnedDeck, listDecks } from "@/features/decks/service";
 import { DeckForm } from "../../deck-form";
 
 export default async function EditDeckPage(props: PageProps<"/decks/[id]/edit">) {
@@ -12,7 +12,7 @@ export default async function EditDeckPage(props: PageProps<"/decks/[id]/edit">)
     <DeckForm
       deckId={id}
       decks={decks.map((d) => ({ id: d._id.toHexString(), name: d.name, depth: d.path.length - 1 }))}
-      initial={{ name: deck.name, description: deck.description, parentId: deck.parentId?.toHexString() ?? "", color: deck.color }}
+      initial={{ name: deck.name, description: deck.description, parentId: deck.parentId?.toHexString() ?? "", color: deck.color, languageCode: await deckLanguage(deck) }}
     />
   );
 }
